@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "./../app/firebase/config";
 import { signOut } from "firebase/auth";
 import { useAuthAction } from "./../context/authContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "./Modal";
 
 export default function SignOutButton() {
@@ -29,6 +29,14 @@ export default function SignOutButton() {
             setLoading(false);
         }
     };
+
+    // useEffect(() => {
+    //     const timer = setTimeout(() => {
+    //         setLoading(false);
+    //     }, 5000);
+
+    //     return () => clearTimeout(timer);
+    // }, [logOut()])
 
     return (
         <div>

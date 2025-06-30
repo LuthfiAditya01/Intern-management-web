@@ -21,7 +21,7 @@ export default function Modal({
                     <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 transition-colors hover:text-gray-600"
+                        className="text-gray-400 cursor-pointer rounded-lg hover:bg-zinc-100 p-1 transition-colors hover:text-gray-600"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -45,13 +45,13 @@ export default function Modal({
                         <>
                             <button
                                 onClick={onClose}
-                                className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                                className="rounded-md bg-gray-100 px-4 py-2 text-sm cursor-pointer font-medium text-gray-700 transition-colors hover:bg-gray-200"
                             >
                                 {cancelText}
                             </button>
                             <button
                                 onClick={onConfirm}
-                                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                                className="rounded-md bg-blue-600 px-4 py-2 text-sm cursor-pointer font-medium text-white transition-colors hover:bg-blue-700"
                             >
                                 {confirmText}
                             </button>

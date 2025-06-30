@@ -91,12 +91,6 @@ export default function Dashboard() {
                             <p className="text-gray-600">Kelola data dan monitor aktivitas magang dengan mudah</p>
                         </div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 ">
-                            <Link href="/addData">
-                                <button className="bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center gap-2">
-                                    <span className="text-xl">➕</span>
-                                    Tambah Anak Magang
-                                </button>
-                            </Link>
                             <SignOutButton />
                         </div>
                     </div>

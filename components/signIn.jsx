@@ -61,10 +61,10 @@ export default function Login() {
         }
     };
 
-    const handleGoogle = async () => {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-    };
+    // const handleGoogle = async () => {
+    //     const provider = new GoogleAuthProvider();
+    //     await signInWithPopup(auth, provider);
+    // };
 
     const handleForgotPassword = async () => {
         if (!form.email) {
@@ -130,7 +130,7 @@ export default function Login() {
 
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-50 flex flex-row items-center justify-center gap-3">
             {/* modals */}
 
             <Modal
@@ -160,11 +160,12 @@ export default function Login() {
                 type="notification"
             />
 
-            <div className="w-full max-w-xl">
+            <img src="assets/image/Banner1.png" alt="Banner" className='w-[55%] h-screen xl:block hidden object-cover' />
+            <div className="w-full max-w-xl mx-3">
                 <div className="bg-white rounded-3xl shadow-xl p-8">
                     <div className="text-center mb-8">
                         <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                            <img src="/assets/image/bps.png" alt="logo" className="w-full" />
+                            <img src="/assets/image/logo.png" alt="logo" className="w-full" />
                         </div>
                         <h1 className="text-3xl font-bold text-gray-800 mb-2">
                             {isLogin ? (
@@ -265,7 +266,7 @@ export default function Login() {
                         <div className="flex-1 border-t border-gray-200"></div>
                     </div>
 
-                    <div className="mt-6">
+                    {/* <div className="mt-6">
                         <button
                             onClick={handleGoogle}
                             className="w-full flex items-center cursor-pointer justify-center px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm"
@@ -278,7 +279,7 @@ export default function Login() {
                             </svg>
                             Google
                         </button>
-                    </div>
+                    </div> */}
                 </div>
                 <p className="text-center text-white/60 text-sm mt-8">
                     © 2025 Kota Bandar Lampung BPS
