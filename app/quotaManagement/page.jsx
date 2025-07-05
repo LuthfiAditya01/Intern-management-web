@@ -81,6 +81,7 @@ export default function QuotaManagement() {
     thisWeekStart.setHours(0, 0, 0, 0);
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    
     const todayInterns = interns.filter(i =>
         new Date(i.tanggalMulai).toDateString() === today
     ).length;
