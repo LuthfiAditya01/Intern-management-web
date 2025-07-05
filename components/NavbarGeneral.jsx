@@ -10,12 +10,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar() {
+export default function NavbarGeneral({ title, subTitle }) {
     const [user, setUser] = useState(null);
-    const [interns, setInterns] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [userInternData, setUserInternData] = useState(null);
+    const [interns, setInterns] = useState([]);
 
     const route = useRouter();
 
@@ -46,40 +45,9 @@ export default function Navbar() {
         }
     }, [user, interns]);
 
-    useEffect(() => {
-        async function fetchInterns() {
-            try {
-                const res = await axios.get("/api/intern");
-                setInterns(res.data.interns);
-            } catch (error) {
-                console.error("Failed to fetch interns:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchInterns();
-    }, []);
-
-    const [quota, setQuota] = useState({ limit: Infinity, used: 0 });
-
-    // useEffect(() => {
-    //     async function fetchQuota() {
-    //         try {
-    //             const res = await axios.get("/api/quota/current");
-    //             setQuota(res.data);
-    //         } catch (error) {
-    //             console.error("Gagal mengambil kuota:", error);
-    //         }
-    //     }
-    //     fetchQuota();
-    // }, []);
-
-
     const handleBack = () => {
         route.push("/dashboard")
     }
-
-    const activeCount = interns.filter((i) => i.status === "aktif").length;
 
     return (
         <div>
@@ -96,22 +64,11 @@ export default function Navbar() {
                                     Hi, {userInternData.nama}
                                 </p>
                             )}
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Data Peserta Magang</h1>
-                            {isAdmin ? (
-                                <p className="text-gray-600 md:block hidden">Kelola data dan monitor aktivitas magang dengan mudah</p>
-                            ) : (
-                                <p className="text-gray-600 md:block hidden">Temukan data kamu di daftar peserta magang</p>
-                            )}
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">{title}</h1>
+                            <p className="text-gray-600 md:block hidden">{subTitle}</p>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-start sm:mx-0 mx-auto sm:items-center gap-5 ">
-                        {/* <Link href="/addData">
-                                <button className="bg-gradient-to-r cursor-pointer from-blue-400 to-blue-500 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center gap-2">
-                                    <FontAwesomeIcon icon={faPlus} />
-                                    Tambah Anak Magang
-                                </button>
-                            </Link> */}
-
                         <SignOutButton />
                     </div>
                 </div>

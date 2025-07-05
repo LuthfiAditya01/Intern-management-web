@@ -35,12 +35,10 @@ export default function NotFound() {
                     </p>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                        <Link href="/">
+                    <div onClick={() => route.back()} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <button className="bg-gradient-to-r cursor-pointer from-blue-500 to-blue-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center gap-2 group">
-                                Kembali ke Login Page
+                                Kembali ke halaman sebelumnya
                             </button>
-                        </Link>
                     </div>
                 </div>
 

@@ -8,12 +8,16 @@ export async function PUT(request, { params }) {
     const {
         newNama: nama,
         newNim: nim,
+        newNik: nik,
         newProdi: prodi,
         newKampus: kampus,
         newTanggalMulai: tanggalMulai,
         newTanggalSelesai: tanggalSelesai,
         newDivisi: divisi,
-        newStatus: status
+        newStatus: status,
+        newPembimbing: pembimbing,
+        newUserId: userId,
+        newEmail: email,
     } = await request.json();
 
     await connectMongoDB();
@@ -21,12 +25,16 @@ export async function PUT(request, { params }) {
     await Intern.findByIdAndUpdate(id, {
         nama,
         nim,
+        nik,
         prodi,
         kampus,
         tanggalMulai,
         tanggalSelesai,
         divisi,
-        status
+        status,
+        pembimbing,
+        userId,
+        email
     });
 
     return NextResponse.json({ message: "Data intern berhasil diperbarui" }, { status: 200 });

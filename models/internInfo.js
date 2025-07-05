@@ -10,6 +10,12 @@ const internSchema = new Schema({
         type: String,
         required: true,
     },
+    nik: {
+        type: String,
+        required: true,
+        index: true,
+        unique: true,
+    },
     prodi: {
         type: String,
         required: true,
@@ -28,12 +34,25 @@ const internSchema = new Schema({
     },
     divisi: {
         type: String,
-        required: true,
+        required: false,
     },
     status: {
         type: String,
         enum: ['aktif', 'selesai', 'dikeluarkan', 'pending'],
+        required: false,
+    },
+    pembimbing: {
+        type: String,
+        enum: ["Ari Rusmasari", "Gun Gun Nugraha"],
         required: true,
+    },
+    userId: {
+        type: String,
+        index: true,
+    },
+    email: {
+        type: String,
+        
     }
 }, {
     timestamps: true

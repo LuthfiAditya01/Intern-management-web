@@ -1,15 +1,16 @@
-"use client";
+"use client"
 
-import { auth } from "../app/firebase/config";
-import axios from "axios";
-import { onAuthStateChanged } from "firebase/auth";
-import React, { useEffect, useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Pencil, Search, SortAsc, SortDesc, Trash2 } from "lucide-react";
-import Modal from "./Modal";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { fetchInternsByMonth } from "@/utils/getInternsByMonth";
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useMemo, useState } from 'react'
+import { auth } from './../app/firebase/config';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pencil, Search, SortAsc, SortDesc } from 'lucide-react';
+import Link from 'next/link';
+import NavbarGeneral from '@/components/NavbarGeneral';
+import { fetchInternsByMonth } from '@/utils/getInternsByMonth';
+
 
 
 const formatDate = (dateStr) => {
@@ -21,40 +22,22 @@ const formatDate = (dateStr) => {
     });
 };
 
-export default function Table(intern) {
+export default function DivisionData(intern) {
     const [user, setUser] = useState(null);
     const [interns, setInterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortOrder, setSortOrder] = useState("desc");
-    const [deleteModal, setDeleteModal] = useState(
-        {
-            isOpen: false,
-            internId: null,
-            internInfo: ''
-        }
-    );
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedYear, setSelectedYear] = useState("");
-    const [isAdmin, setIsAdmin] = useState(false);
+
 
     const route = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setUser(user);
-                const token = await user.getIdTokenResult();
-                const admin = token.claims.role === "admin";
-                setIsAdmin(admin)
-                if (token.claims.role === "admin") {
-                    console.log("👑 Ini admin");
-                } else {
-                    console.log("🙅‍♂️ Bukan admin");
-                }
-            }
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
         });
-
         return () => unsubscribe();
     }, []);
 
@@ -76,7 +59,7 @@ export default function Table(intern) {
                     data = res.data.interns;
                 }
 
-                setInterns(data);
+                setInterns(data.filter((intern) => intern.status?.toLowerCase() === "aktif"));
             } catch (error) {
                 console.error("Gagal memuat data:", error);
             } finally {
@@ -87,48 +70,9 @@ export default function Table(intern) {
         loadData();
     }, [selectedMonth, selectedYear]);
 
-
-    const openDeleteModal = (internId, internInfo) => {
-        setDeleteModal({
-            isOpen: true,
-            internId,
-            internInfo
-        });
-    };
-
-    const closeDeleteModal = () => {
-        setDeleteModal({
-            isOpen: false,
-            internId: null,
-            internInfo: ''
-        });
-    };
-
-    const handleDelete = async () => {
-        try {
-            const internId = deleteModal.internId;
-            if (!internId) return;
-
-            const res = await fetch(`/api/intern?id=${internId}`, {
-                method: "DELETE",
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "Failed to delete data");
-            }
-
-            setInterns(interns.filter(intern => intern._id !== internId));
-            closeDeleteModal();
-        } catch (error) {
-            console.error("Error deleting data intern:", error);
-            setError(error.message);
-            closeDeleteModal();
-        }
-    };
-
-    const toggleSortOrder = () =>
+    const toggleSortOrder = () => {
         setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+    };
 
     const processedInterns = useMemo(() => {
         const filtered = searchTerm
@@ -148,10 +92,9 @@ export default function Table(intern) {
         return sorted;
     }, [interns, searchTerm, sortOrder]);
 
-
     if (loading) {
-        return <div className="text-center py-10">Loading data…</div>;
-    }
+        return <div className='text-center py-10 items-center'>Loading data...</div>
+    };
 
     const getDivisionColor = (divisi) => {
         switch (divisi.toLowerCase()) {
@@ -189,32 +132,10 @@ export default function Table(intern) {
         }
     };
 
-    const editRoute = () => {
-        setLoading(true);
-        route.push(`/editDataConfig/${id}`)
-    };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
 
     return (
-        <div>
-            <Modal
-                isOpen={deleteModal.isOpen}
-                onClose={closeDeleteModal}
-                title="Konfirmasi Penghapusan"
-                message="Apakah Anda yakin ingin menghapus data secara permanen?"
-                type="confirmation"
-                onConfirm={handleDelete}
-                confirmText="Ya"
-                cancelText="Batal"
-            />
-
+        <div className='p-0 md:p-6 max-w-full md:max-w-8xl mx-auto'>
             <Card className="border-0 md:max-w-8xl">
                 <CardHeader>
                     <CardTitle className="mx-auto text-2xl font-bold text-center">
@@ -282,18 +203,13 @@ export default function Table(intern) {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-gray-300">
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">No.</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Nama</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">NIM</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Program Studi</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Universitas</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Timeline</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Divisi</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Status</th>
-                                    <th className="px-6 py-3 text-center text-sm font-medium bg-neutral-100 text-black">Pembimbing</th>
-                                    {isAdmin && (
-                                        <th className="px-6 py-3 text-sm bg-neutral-100 text-black">Aksi</th>
-                                    )}
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">No.</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Nama</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Program Studi</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Universitas</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Timeline</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Divisi</th>
+                                    <th className="px-6 py-3 text-sm bg-neutral-100 text-black">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -302,9 +218,8 @@ export default function Table(intern) {
                                         <tr key={intern._id || index} className="border-b border-gray-300 hover:bg-gray-50">
                                             <td className="px-6 py-4">{index + 1}</td>
                                             <td className="px-6 py-4">{intern.nama}</td>
-                                            <td className="px-6 py-4">{intern.nim}</td>
-                                            <td className="px-6 py-4 text-center">{intern.prodi}</td>
-                                            <td className="px-6 py-4 text-center">{intern.kampus}</td>
+                                            <td className="px-6 py-4">{intern.prodi}</td>
+                                            <td className="px-6 py-4">{intern.kampus}</td>
                                             <td className="px-6 py-4">
                                                 {formatDate(intern.tanggalMulai)} – {formatDate(intern.tanggalSelesai)}
                                             </td>
@@ -313,30 +228,15 @@ export default function Table(intern) {
                                                     {intern.divisi}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className={`inline-flex items-center capitalize px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(intern.status)}`}>
-                                                    {intern.status}
-                                                </div>
+                                            <td className="px-6 py-4 flex mt-1">
+                                                <Link
+                                                    href={`/assignForm/${intern._id}`}
+                                                    className="p-1 rounded-full hover:bg-blue-50"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil size={20} className="text-blue-600" />
+                                                </Link>
                                             </td>
-                                            <td className="px-6 py-4 text-center">{intern.pembimbing}</td>
-                                            {isAdmin && (
-                                                <td className="px-6 py-4 flex gap-2">
-                                                    <Link
-                                                        href={`/editDataConfig/${intern._id}`}
-                                                        className="p-1 rounded-full hover:bg-blue-50"
-                                                        title="Edit"
-                                                    >
-                                                        <Pencil size={20} className="text-blue-600" />
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => openDeleteModal(intern._id, intern.nama)}
-                                                        className="cursor-pointer p-1 rounded-full hover:bg-red-50"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={20} className="text-red-600" />
-                                                    </button>
-                                                </td>
-                                            )}
                                         </tr>
                                     ))
                                 ) : (

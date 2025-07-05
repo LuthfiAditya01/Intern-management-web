@@ -6,19 +6,71 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import SignOutButton from "./signOutButton";
+import { useRouter } from "next/navigation";
+
+const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+};
+
 
 export default function Dashboard() {
     const [interns, setInterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const [kuota, setKuota] = useState("15");
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isPembimbing, setIsPembimbing] = useState(false);
+    const [userStatus, setUserStatus] = useState("pending");
+    const [userDivision, setUserDivision] = useState("-");
+    const [userPeriod, setUserPeriod] = useState(null);
+    const [userInternData, setUserInternData] = useState(null);
+    const [pageLoading, setPageLoading] = useState(false);
+
+    const route = useRouter();
+
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setUser(user);
+                const token = await user.getIdTokenResult();
+                const admin = token.claims.role === "admin";
+                const pembimbing = token.claims.role === "pembimbing";
+                setIsAdmin(admin);
+                setIsPembimbing(pembimbing);
+                if (token.claims.role === "pembimbing") {
+                    console.log("ini pembimbing");
+                } else {
+                    console.log("ini bukan pembimbing")
+                }
+                if (token.claims.role === "admin") {
+                    console.log("👑 Ini admin");
+                } else {
+                    console.log("🙅‍♂️ Bukan admin");
+                }
+            }
         });
 
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (user && interns.length > 0) {
+            const me = interns.find((i) => i.userId === user.uid);
+            if (me) {
+                setUserInternData(me);
+                setUserStatus(me.status ?? "pending");
+                setUserDivision(me.divisi ?? "-");
+                setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
+            }
+        }
+    }, [user, interns]);
+
 
     useEffect(() => {
         async function fetchInterns() {
@@ -52,7 +104,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-                    <p className={`text-3xl font-bold text-${color}-600`}>{value}</p>
+                    <p className={`text-3xl capitalize font-bold text-${color}-600`}>{value}</p>
                 </div>
                 <div className={`text-4xl bg-${color}-50 p-3 rounded-full`}>
                     {icon}
@@ -61,19 +113,36 @@ export default function Dashboard() {
         </div>
     );
 
-    const MenuCard = ({ href, icon, title, description, color = "gray" }) => (
-        <Link href={href}>
-            <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl hover:bg-${color}-50 cursor-pointer transition-all duration-300 hover:-translate-y-1 group`}>
-                <div className="text-center">
-                    <div className={`text-5xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                        {icon}
-                    </div>
-                    <h3 className="font-semibold text-gray-800 mb-2">{title}</h3>
-                    <p className="text-sm text-gray-600">{description}</p>
+    const MenuCard = ({ href, icon, title, description, color = "gray", onClick }) => (
+        <div
+            onClick={onClick}
+            className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl hover:bg-${color}-50 cursor-pointer transition-all duration-300 hover:-translate-y-1 group`}
+        >
+            <div className="text-center">
+                <div className={`text-5xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    {icon}
                 </div>
+                <h3 className="font-semibold text-gray-800 mb-2">{title}</h3>
+                <p className="text-sm text-gray-600">{description}</p>
             </div>
-        </Link>
+        </div>
     );
+
+    const handleMenuClick = (href) => {
+        setPageLoading(true);
+        setTimeout(() => {
+            route.push(href);
+        }, 500);
+    };
+
+    if (pageLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -82,13 +151,23 @@ export default function Dashboard() {
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            {user && (
+                            {userInternData && (
                                 <p className="text-lg font-medium text-gray-600 mb-1">
-                                    Hi, {user.displayName || user.email}
+                                    Hi, {userInternData.nama}
                                 </p>
                             )}
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Magang</h1>
-                            <p className="text-gray-600">Kelola data dan monitor aktivitas magang dengan mudah</p>
+                            {isAdmin && (
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-blue-500">ADMIN</span></h1>
+                            )}
+                            {isPembimbing && (
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-blue-500">PEMBIMBING</span></h1>
+                            )}
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard <span className="text-blue-500">MAGNET</span></h1>
+                            {isAdmin ? (
+                                <p className="text-gray-600">Kelola data dan monitor aktivitas magang dengan mudah</p>
+                            ) : (
+                                <p className="text-gray-600">Pantau Status Pengajuan Magang dan Progress Magang Kamu Di Sini</p>
+                            )}
                         </div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 ">
                             <SignOutButton />
@@ -101,97 +180,167 @@ export default function Dashboard() {
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                         <p className="text-gray-600 font-medium">Memuat data...</p>
                     </div>
-                ) : interns.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-12 text-center">
-                        <div className="text-6xl mb-6">📋</div>
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Belum Ada Data Anak Magang</h2>
-                        <p className="text-gray-600 mb-8">Mulai dengan menambahkan data anak magang pertama Anda</p>
-                        <Link href="/addData">
-                            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
-                                Tambahkan Data Anak Magang
-                            </button>
-                        </Link>
-                    </div>
                 ) : (
-                    <>
-                        {/* Statistics Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <StatCard
-                                title="Anak Magang Aktif"
-                                value={activeCount}
-                                icon="👥"
-                                color="green"
-                            />
-                            <StatCard
-                                title="Total Kuota Bulanan"
-                                value={interns.length}
-                                icon="📊"
-                                color="blue"
-                            />
-                            <StatCard
-                                title="Divisi Terbanyak"
-                                value={mostPopularDivisi || '-'}
-                                icon="🏆"
-                                color="yellow"
-                            />
-                        </div>
-
-                        {/* Menu Cards */}
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <MenuCard
-                                    href="/kalender"
-                                    icon="📅"
-                                    title="Kalender Jadwal"
-                                    description="Lihat dan kelola jadwal magang"
-                                    color="blue"
-                                />
-                                <MenuCard
-                                    href="/dataMagang"
+                    isAdmin || isPembimbing ? (
+                        <>
+                            {/* Statistics Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <StatCard
+                                    title="Anak Magang Aktif"
+                                    value={activeCount}
                                     icon="👥"
-                                    title="Data Anak Magang"
-                                    description="Kelola informasi anak magang"
                                     color="green"
                                 />
-                                <MenuCard
-                                    href="/divisi"
-                                    icon="🏢"
-                                    title="Divisi & Penempatan"
-                                    description="Atur divisi dan penempatan"
-                                    color="purple"
-                                />
-                                <MenuCard
-                                    href="/monitoring"
+                                <StatCard
+                                    title="Total Kuota Harian"
+                                    value={kuota}
                                     icon="📊"
-                                    title="Kuota & Monitoring"
-                                    description="Monitor kuota dan progress"
-                                    color="orange"
+                                    color="blue"
+                                />
+                                <StatCard
+                                    title="Divisi Terbanyak"
+                                    value={mostPopularDivisi || '-'}
+                                    icon="🏆"
+                                    color="yellow"
                                 />
                             </div>
-                        </div>
 
-                        {/* Quick Stats Section */}
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Ringkasan Cepat</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="text-2xl">✅</div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Status Aktif</p>
-                                        <p className="text-sm text-gray-600">{activeCount} dari {interns.length} anak magang</p>
-                                    </div>
+                            {/* Menu Cards */}
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <MenuCard
+                                        icon="📅"
+                                        title="Kalender Jadwal"
+                                        description="Lihat dan kelola jadwal magang"
+                                        color="blue"
+                                        onClick={() => handleMenuClick("/kalender")}
+                                    />
+
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/dataMagang")}
+                                        icon="👥"
+                                        title="Data Anak Magang"
+                                        description="Kelola informasi anak magang"
+                                        color="green"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/divisi")}
+                                        icon="🏢"
+                                        title="Divisi & Penempatan"
+                                        description="Atur divisi dan penempatan"
+                                        color="purple"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/quotaManagement")}
+                                        icon="📊"
+                                        title="Kuota & Monitoring"
+                                        description="Monitor kuota dan progress"
+                                        color="orange"
+                                    />
                                 </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="text-2xl">🎯</div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Divisi Populer</p>
-                                        <p className="text-sm text-gray-600">{mostPopularDivisi || 'Belum ada data'}</p>
+                            </div>
+
+                            {/* Quick Stats Section */}
+                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <h3 className="text-lg font-bold text-gray-800 mb-4">Ringkasan Cepat</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                        <div className="text-2xl">✅</div>
+                                        <div>
+                                            <p className="font-medium text-gray-800">Status Aktif</p>
+                                            <p className="text-sm text-gray-600">{activeCount} dari {interns.length} anak magang</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                        <div className="text-2xl">🎯</div>
+                                        <div>
+                                            <p className="font-medium text-gray-800">Divisi Populer</p>
+                                            <p className="text-sm text-gray-600">{mostPopularDivisi || 'Belum ada data'}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </>
+                        </>
+                    ) : (
+                        <>
+                            {userInternData && (
+                                <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                                        Halo, <span className="text-blue-500">{userInternData.nama}</span> 👋
+                                    </h2>
+                                    <div className="grid grid-cols-1 gap-y-2 text-gray-700 text-sm">
+                                        <div className="text-xl">
+                                            <span className="font-semibold text-gray-600">NIM:</span> {userInternData.nim}
+                                        </div>
+                                        <div className="text-xl">
+                                            <span className="font-semibold text-gray-600">Prodi:</span> {userInternData.prodi}
+                                        </div>
+                                        <div className="text-xl">
+                                            <span className="font-semibold text-gray-600">Kampus:</span> {userInternData.kampus}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Statistics Cards */}
+                            <div className="grid grid-cols-1 gap-6 mb-8">
+                                <StatCard
+                                    title="Status Magang Kamu"
+                                    value={userStatus}
+                                    icon="⌛"
+                                    color="green"
+                                />
+                                <StatCard
+                                    title="Divisi Kamu Saat Ini"
+                                    value={userDivision}
+                                    icon="🏛️"
+                                    color="blue"
+                                />
+                                <StatCard
+                                    title="Periode Magang Kamu"
+                                    value={userPeriod}
+                                    icon="🗓️"
+                                    color="yellow"
+                                />
+                            </div>
+
+                            {/* Menu Cards */}
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/kalender")}
+                                        icon="📅"
+                                        title="Kalender Jadwal"
+                                        description="Lihat dan kelola jadwal magang"
+                                        color="blue"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/dataMagang")}
+                                        icon="👥"
+                                        title="Data Anak Magang"
+                                        description="Kelola informasi anak magang"
+                                        color="green"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/divisi")}
+                                        icon="🏢"
+                                        title="Divisi & Penempatan"
+                                        description="Atur divisi dan penempatan"
+                                        color="purple"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/quotaManagement")}
+                                        icon="📊"
+                                        title="Kuota & Monitoring"
+                                        description="Monitor kuota dan progress"
+                                        color="orange"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )
                 )}
             </div>
         </div>

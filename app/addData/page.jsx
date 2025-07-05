@@ -13,7 +13,7 @@ export default function AddInternPage() {
     kampus: "",
     tanggalMulai: "",
     tanggalSelesai: "",
-    divisi: "",
+    divisi: "-",
     status: "aktif",
   });
 
@@ -22,6 +22,8 @@ export default function AddInternPage() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    console.log(typeof form.tanggalMulai);
+    console.log(form.tanggalSelesai);
   };
 
   const handleSubmit = async (e) => {
@@ -43,7 +45,7 @@ export default function AddInternPage() {
         throw new Error(data.message || "Gagal menambahkan data.");
       }
 
-      router.push("/");
+      router.push("/dataMagang");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,13 +54,7 @@ export default function AddInternPage() {
   };
 
   const divisionOptions = [
-    { value: "Umum", label: "Umum" },
-    { value: "Produksi", label: "Produksi" },
-    { value: "Sosial", label: "Sosial" },
-    { value: "Distribusi", label: "Distribusi" },
-    { value: "Nerwilis", label: "Nerwilis" },
-    { value: "PTI", label: "PTI" },
-    { value: "Sektoral", label: "Sektoral" },
+    { value: "-", label: "-" }
   ];
 
   const statusOptions = [
@@ -122,7 +118,7 @@ export default function AddInternPage() {
                   </div>
 
                   {/* NIM */}
-                  <div>
+                  <div> 
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       NIM
                     </label>
@@ -221,14 +217,14 @@ export default function AddInternPage() {
               </div>
 
               {/* Assignment Section */}
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-200 pt-6 justify-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-blue-600" />
                   Penempatan & Status
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Divisi */}
+                  {/* Divisi
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Divisi
@@ -247,7 +243,7 @@ export default function AddInternPage() {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
 
                   {/* Status */}
                   <div>
