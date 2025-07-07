@@ -9,10 +9,14 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import NavbarGeneral from '@/components/NavbarGeneral';
+import ProtectedRoute from '@/components/ProtectedRoutes';
 
 export default function QuotaManagement() {
     const DAILY_QUOTA = 15;
-    const MONTHLY_TARGET = 200;
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const MONTHLY_TARGET = DAILY_QUOTA * daysInMonth;
+
 
     const [isLoading, setIsLoading] = useState(true);
     const [interns, setInterns] = useState([]);
@@ -74,14 +78,12 @@ export default function QuotaManagement() {
         return sampleInterns;
     }
 
-    const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeekStart = new Date(now);
     thisWeekStart.setDate(now.getDate() - now.getDay());
     thisWeekStart.setHours(0, 0, 0, 0);
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    
     const todayInterns = interns.filter(i =>
         new Date(i.tanggalMulai).toDateString() === today
     ).length;
@@ -162,121 +164,122 @@ export default function QuotaManagement() {
         };
     });
 
-    // Choose which bar chart to display based on data availability
     const hasRecentData = barData.some(item => item.jumlah > 0);
     const displayBarData = hasRecentData ? barData : monthlyBarData;
-    const barChartTitle = hasRecentData ? "Magang 7 Hari Terakhir" : "Magang 6 Bulan Terakhir";
+    const barChartTitle = hasRecentData ? "Pendaftar Magang 7 Hari Terakhir" : "Pendaftar Magang 6 Bulan Terakhir";
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-6xl mx-auto">
-                <NavbarGeneral title="Dashboard Kuota Magang" subTitle="Pantau dan kelola kuota anak magang secara real-time" />
+        <ProtectedRoute>
+            <div className="min-h-screen bg-gray-50 p-6">
+                <div className="max-w-6xl mx-auto">
+                    <NavbarGeneral title="Dashboard Kuota Magang" subTitle="Pantau dan kelola kuota anak magang secara real-time" />
 
-                {/* Main Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-                    <StatCard
-                        title="Kuota Harian"
-                        icon={<Users />}
-                        content={`${monthlyTotal}/${DAILY_QUOTA}`}
-                        progress={monthlyProgress}
-                        suffix={`${DAILY_QUOTA - monthlyTotal} slot tersisa`}
-                    />
-                    <StatCard
-                        title="Target Bulan Ini"
-                        icon={<Clock />}
-                        content={`${monthlyProgress.toFixed(1)}%`}
-                        progress={monthlyProgress}
-                        suffix={`${monthlyTotal} dari ${MONTHLY_TARGET} target`}
-                    />
-                </div>
-
-                {/* Status Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <StatCard
-                        title="Status Aktif"
-                        icon={<CheckCircle className="text-green-600" />}
-                        content={statusCounts.aktif}
-                        suffix="Sedang magang"
-                    />
-
-                    <StatCard
-                        title="Selesai"
-                        icon={<Clock className="text-blue-600" />}
-                        content={statusCounts.selesai}
-                        suffix="Magang selesai"
-                    />
-
-                    <StatCard
-                        title="Pending"
-                        icon={<AlertCircle className="text-yellow-600" />}
-                        content={statusCounts.pending}
-                        suffix="Menunggu mulai"
-                    />
-
-                    <StatCard
-                        title="Dikeluarkan"
-                        icon={<XCircle className="text-red-600" />}
-                        content={statusCounts.dikeluarkan}
-                        suffix="Magang dibatalkan"
-                    />
-                </div>
-
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Pie Chart Status */}
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Komposisi Status</h3>
-                        {pieData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        data={pieData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={100}
-                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    >
-                                        {pieData.map((entry, idx) => (
-                                            <Cell key={`cell-${idx}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value) => [value, 'Jumlah']} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-64 text-gray-500">
-                                <p>Tidak ada data untuk ditampilkan</p>
-                            </div>
-                        )}
+                    {/* Main Statistics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+                        <StatCard
+                            title="Kuota Harian"
+                            icon={<Users />}
+                            content={`${monthlyTotal}/${DAILY_QUOTA}`}
+                            progress={monthlyProgress}
+                            suffix={`${DAILY_QUOTA - monthlyTotal} slot tersisa`}
+                        />
+                        <StatCard
+                            title="Kuota Bulan Ini"
+                            icon={<Clock />}
+                            content={`${monthlyTotal}/${MONTHLY_TARGET}`}
+                            progress={monthlyProgress}
+                            suffix={`${MONTHLY_TARGET - monthlyTotal} slot tersisa bulan ini`}
+                        />
                     </div>
 
-                    {/* Bar Chart */}
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">{barChartTitle}</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={displayBarData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey={hasRecentData ? "day" : "month"}
-                                    fontSize={12}
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={60}
-                                />
-                                <YAxis />
-                                <Tooltip
-                                    formatter={(value) => [value, 'Jumlah Intern']}
-                                    labelFormatter={(label) => `${hasRecentData ? 'Tanggal' : 'Bulan'}: ${label}`}
-                                />
-                                <Bar dataKey="jumlah" fill="#3b82f6" />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    {/* Status Statistics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <StatCard
+                            title="Status Aktif"
+                            icon={<CheckCircle className="text-green-600" />}
+                            content={statusCounts.aktif}
+                            suffix="Sedang magang"
+                        />
+
+                        <StatCard
+                            title="Selesai"
+                            icon={<Clock className="text-blue-600" />}
+                            content={statusCounts.selesai}
+                            suffix="Magang selesai"
+                        />
+
+                        <StatCard
+                            title="Pending"
+                            icon={<AlertCircle className="text-yellow-600" />}
+                            content={statusCounts.pending}
+                            suffix="Menunggu mulai"
+                        />
+
+                        <StatCard
+                            title="Dikeluarkan"
+                            icon={<XCircle className="text-red-600" />}
+                            content={statusCounts.dikeluarkan}
+                            suffix="Magang dibatalkan"
+                        />
+                    </div>
+
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Pie Chart Status */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Komposisi Status</h3>
+                            {pieData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        >
+                                            {pieData.map((entry, idx) => (
+                                                <Cell key={`cell-${idx}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => [value, 'Jumlah']} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-64 text-gray-500">
+                                    <p>Tidak ada data untuk ditampilkan</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bar Chart */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">{barChartTitle}</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={displayBarData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey={hasRecentData ? "day" : "month"}
+                                        fontSize={12}
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={60}
+                                    />
+                                    <YAxis />
+                                    <Tooltip
+                                        formatter={(value) => [value, 'Jumlah Intern']}
+                                        labelFormatter={(label) => `${hasRecentData ? 'Tanggal' : 'Bulan'}: ${label}`}
+                                    />
+                                    <Bar dataKey="jumlah" fill="#3b82f6" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </ProtectedRoute>
     );
 }
 

@@ -1,4 +1,5 @@
 import DivisionForm from '@/components/DivisionForm';
+import ProtectedRoute from '@/components/ProtectedRoutes';
 import React from 'react'
 
 const getInternDataById = async (id) => {
@@ -22,5 +23,9 @@ export default async function AssignForm({ params }) {
     const { intern } = await getInternDataById(id);
     const { nama, divisi } = intern;
 
-    return <DivisionForm id={id} nama={nama} divisi={divisi} />
+    return (
+        <ProtectedRoute>
+            <DivisionForm id={id} nama={nama} divisi={divisi} />
+        </ProtectedRoute>
+    )
 }

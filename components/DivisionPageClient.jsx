@@ -34,17 +34,20 @@ export default function DivisionPageClient({ interns }) {
 
     const allDivisions = ['Umum', 'Produksi', 'Sosial', 'Distribusi', 'Nerwilis', 'PTID', 'Sektoral'];
 
-    const groupedByDivisi = interns.reduce((acc, intern) => {
-        const divisiRaw = intern.divisi|| 'tidak diketahui';
-        if (divisiRaw === 'ptid`') divisiRaw = 'pti';
-        if (divisiRaw === 'sosial`') divisiRaw = 'sosial';
+    const groupedByDivisi = interns
+        .filter(intern => intern.status === "aktif")
+        .reduce((acc, intern) => {
+            let divisiRaw = intern.divisi || 'tidak diketahui';
+            if (divisiRaw === 'ptid`') divisiRaw = 'PTID';
+            if (divisiRaw === 'sosial`') divisiRaw = 'Sosial';
 
-        if (!allDivisions.includes(divisiRaw)) return acc;
+            if (!allDivisions.includes(divisiRaw)) return acc;
 
-        if (!acc[divisiRaw]) acc[divisiRaw] = [];
-        acc[divisiRaw].push(intern);
-        return acc;
-    }, {});
+            if (!acc[divisiRaw]) acc[divisiRaw] = [];
+            acc[divisiRaw].push(intern);
+            return acc;
+        }, {});
+
 
     allDivisions.forEach(division => {
         if (!groupedByDivisi[division]) {

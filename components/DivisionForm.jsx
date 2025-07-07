@@ -4,6 +4,7 @@ import { faTruckField } from '@fortawesome/free-solid-svg-icons';
 import { ArrowLeft, Building, Calendar, CheckCircle, GraduationCap, Hash, User, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
+import SuccessModal from './SuccessModal';
 
 export default function DivisionForm({ id, nama, divisi }) {
 
@@ -12,6 +13,7 @@ export default function DivisionForm({ id, nama, divisi }) {
     const [interns, setInterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleDivisiChange = (e) => setNewDivisi(e.target.value);
 
@@ -77,7 +79,8 @@ export default function DivisionForm({ id, nama, divisi }) {
     //     { value: "pending", label: "Pending", color: "text-yellow-600" },
     // ];
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         try {
             const response = await fetch(`http://localhost:3000/api/intern/${id}`, {
                 method: 'PUT',
@@ -92,9 +95,8 @@ export default function DivisionForm({ id, nama, divisi }) {
             if (!response.ok) {
                 throw new Error('Gagal menyimpan data peserta magang');
             }
+            setShowSuccessModal(true);
 
-            alert('Data peserta magang berhasil diperbarui');
-            route.push('/divisi');
         } catch (error) {
             console.log('Error', error);
             alert('Terjadi kesalahan saat menyimpan data');
@@ -262,7 +264,7 @@ export default function DivisionForm({ id, nama, divisi }) {
                                             value={newDivisi}
                                             onChange={handleDivisiChange}
                                             required
-                                            className="w-full px-4 py-3 border rounded-lg"
+                                            className="w-full cursor-pointer px-4 py-3 border rounded-lg"
                                         >
                                             <option value="">Pilih Divisi</option>
                                             {divisionOptions.map((o) => (
@@ -344,6 +346,15 @@ export default function DivisionForm({ id, nama, divisi }) {
                     </div>
                 </div>
             </div>
+            {/* Success Modal */}
+            <SuccessModal
+                isOpen={showSuccessModal}
+                onClose={() => setShowSuccessModal(false)}
+                title="Divisi Berhasil Diupdate!"
+                message="Selamat, data berhasil diperbarui."
+                buttonText="Lihat Semua Data"
+                redirectUrl="/assignDivision"
+            />
         </div>
     )
 }

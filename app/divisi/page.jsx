@@ -1,4 +1,5 @@
 import DivisionPageClient from '@/components/DivisionPageClient';
+import ProtectedRoute from '@/components/ProtectedRoutes';
 
 async function getInterns() {
   try {
@@ -16,5 +17,9 @@ async function getInterns() {
 export default async function DivisiPage() {
   const { interns } = await getInterns();
 
-  return <DivisionPageClient interns={interns} />;
+  return (
+    <ProtectedRoute>
+      <DivisionPageClient interns={interns} />;
+    </ProtectedRoute>
+  )
 }

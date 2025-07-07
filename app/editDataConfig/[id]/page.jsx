@@ -1,3 +1,4 @@
+import ProtectedRoute from "@/components/ProtectedRoutes";
 import InternDataManagement from "./../../../components/InternDataManagement";
 
 const getInternDataById = async (id) => {
@@ -21,5 +22,9 @@ export default async function EditData({ params }) {
     const { intern } = await getInternDataById(id);
     const { nama, nim, prodi, kampus, tanggalMulai, tanggalSelesai, divisi, status } = intern;
 
-    return <InternDataManagement id={id} nama={nama} nim={nim} prodi={prodi} kampus={kampus} tanggalMulai={tanggalMulai} tanggalSelesai={tanggalSelesai} divisi={divisi} status={status} />
+    return (
+        <ProtectedRoute>
+            <InternDataManagement id={id} nama={nama} nim={nim} prodi={prodi} kampus={kampus} tanggalMulai={tanggalMulai} tanggalSelesai={tanggalSelesai} divisi={divisi} status={status} />
+        </ProtectedRoute>
+    )
 }

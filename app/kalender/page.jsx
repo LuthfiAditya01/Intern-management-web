@@ -3,6 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react'; // Import useMemo
 import { ChevronLeft, ChevronRight, User, Calendar, Building, GraduationCap, MapPin, Clock, Mail, Hash, X } from 'lucide-react';
 import NavbarGeneral from '@/components/NavbarGeneral';
+import axios from 'axios';
+import ProtectedRoute from '@/components/ProtectedRoutes';
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/app/firebase/config";
 
 // Fungsi untuk menormalkan tanggal (menghilangkan komponen waktu)
 const normalizeDate = (date) => {
@@ -23,6 +27,17 @@ const InternCalendar = () => {
     date: null,
     interns: [],
   });
+  const [canViewDetail, setCanViewDetail] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      const token = await user.getIdTokenResult();
+      const role = token.claims.role;
+      setCanViewDetail(role === "admin" || role === "pembimbing");
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const fetchInterns = async () => {
@@ -110,9 +125,11 @@ const InternCalendar = () => {
   };
 
   const handleInternClick = (intern) => {
+    if (!canViewDetail) return;
     setSelectedIntern(intern);
     setIsModalOpen(true);
   };
+
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -162,210 +179,215 @@ const InternCalendar = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Modal untuk Daftar Intern Harian */}
-      {dayDetail.isOpen && (
-        <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
-            {/* Header Modal */}
-            <div className="p-6 border-b flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Daftar Magang</p>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {formatDate(dayDetail.date)}
-                </h3>
-              </div>
-              <button onClick={closeDayDetailModal} className="p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Konten (Daftar Nama) */}
-            <div className="p-6 overflow-y-auto">
-              <ul className="space-y-3">
-                {dayDetail.interns.map(intern => (
-                  <li key={intern._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-800">{intern.nama}</span>
-                    <button
-                      onClick={() => {
-                        closeDayDetailModal();
-                        handleInternClick(intern);
-                      }}
-                      className="text-xs cursor-pointer text-blue-600 hover:underline font-semibold"
-                    >
-                      Lihat Detail
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-      <NavbarGeneral title="Kalender Jadwal Peserta Magang" subTitle="Pantau setiap tanggal dari periode setiap peserta magang" />
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-        {/* Judul */}
-        <h1 className="text-3xl font-bold text-gray-900">Kalender Magang</h1>
-
-        {/* Kontainer untuk Navigasi dan Legenda */}
-        <div className="flex flex-col-reverse sm:flex-row items-center gap-6">
-
-          {/* Legenda Pewarnaan */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-white border border-gray-300"></div>
-              <span className="text-sm text-gray-600">Hari Kerja</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-red-50 border border-red-200"></div>
-              <span className="text-sm text-gray-600">Akhir Pekan</span>
-            </div>
-          </div>
-
-          {/* Navigasi Bulan */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => navigateMonth(-1)}
-              className="p-2 cursor-pointer rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <h2 className="text-xl font-semibold text-gray-800 min-w-[12rem] text-center">
-              {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h2>
-            <button
-              onClick={() => navigateMonth(1)}
-              className="p-2 cursor-pointer rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="grid grid-cols-7 bg-gray-50 border-b">
-          {daysOfWeek.map(day => (
-            <div key={day} className="p-4 text-center font-semibold text-gray-700">{day}</div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 auto-rows-fr">
-          {days.map((date, index) => {
-            const internsForDate = date ? internsByDate.get(date.toDateString()) || [] : [];
-            const isWeekend = date && (date.getDay() === 0 || date.getDay() === 6);
-            const isToday = date && date.toDateString() === new Date().toDateString();
-
-            return (
-              <div
-                key={index}
-                className={`min-h-32 border-b border-r border-gray-200 p-2 flex flex-col ${!date ? 'bg-gray-50' // Untuk sel kosong
-                  : isWeekend ? 'bg-red-50 hover:bg-red-100'
-                    : 'bg-white hover:bg-gray-50'
-                  }`}
-              >
-                {date && (
-                  <>
-                    <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-                      {date.getDate()}
-                    </div>
-                    {internsForDate.length > 0 && (
-                      <div className="space-y-1">
-                        {internsForDate.slice(0, 3).map(intern => (
-                          <button
-                            key={intern._id}
-                            onClick={() => handleInternClick(intern)}
-                            className="w-full cursor-pointer text-left p-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded truncate transition-colors"
-                            title={intern.nama}
-                          >
-                            {intern.nama}
-                          </button>
-                        ))}
-                        {internsForDate.length > 3 && (
-                          <button
-                            onClick={() => openDayDetailModal(date, internsForDate)}
-                            className="w-full cursor-pointer text-center text-xs font-medium text-blue-600 hover:underline mt-1"
-                          >
-                            +{internsForDate.length - 3} lainnya
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Modal */}
-      {isModalOpen && selectedIntern && (
-        <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b flex justify-between items-center">
-              <h3 className="text-2xl font-bold text-gray-900">Detail Magang</h3>
-              <button onClick={closeModal} className="p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {/* Data Diri */}
-                  {[
-                    { icon: User, label: 'Nama', value: selectedIntern.nama },
-                    { icon: Hash, label: 'NIM', value: selectedIntern.nim },
-                    { icon: Hash, label: 'NIK', value: selectedIntern.nik },
-                    { icon: GraduationCap, label: 'Program Studi', value: selectedIntern.prodi },
-                    { icon: Building, label: 'Kampus', value: selectedIntern.kampus },
-                    { icon: Mail, label: 'Email', value: selectedIntern.email },
-                  ].map((item, idx) => item.value && (
-                    <div key={idx} className="flex items-start space-x-3">
-                      <item.icon className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm text-gray-500">{item.label}</p>
-                        <p className="font-semibold">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
+    <ProtectedRoute>
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Modal untuk Daftar Intern Harian */}
+        {dayDetail.isOpen && (
+          <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
+              {/* Header Modal */}
+              <div className="p-6 border-b flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500">Daftar Magang</p>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {formatDate(dayDetail.date)}
+                  </h3>
                 </div>
-                <div className="space-y-4">
-                  {/* Info Magang */}
-                  {[
-                    { icon: Calendar, label: 'Tanggal Mulai', value: formatDate(selectedIntern.tanggalMulai) },
-                    { icon: Calendar, label: 'Tanggal Selesai', value: formatDate(selectedIntern.tanggalSelesai) },
-                    { icon: Building, label: 'Divisi', value: selectedIntern.divisi },
-                    { icon: User, label: 'Pembimbing', value: selectedIntern.pembimbing },
-                  ].map((item, idx) => item.value && (
-                    <div key={idx} className="flex items-start space-x-3">
-                      <item.icon className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm text-gray-500">{item.label}</p>
-                        <p className="font-semibold">{item.value}</p>
-                      </div>
-                    </div>
+                <button onClick={closeDayDetailModal} className="p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Konten (Daftar Nama) */}
+              <div className="p-6 overflow-y-auto">
+                <ul className="space-y-3">
+                  {dayDetail.interns.map(intern => (
+                    <li key={intern._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium text-gray-800">{intern.nama}</span>
+                      {canViewDetail && (
+                        <button
+                          onClick={() => {
+                            closeDayDetailModal();
+                            handleInternClick(intern);
+                          }}
+                          className="text-xs cursor-pointer text-blue-600 hover:underline font-semibold"
+                        >
+                          Lihat Detail
+                        </button>
+                      )}
+
+                    </li>
                   ))}
-                  {selectedIntern.status && (
-                    <div className="flex items-start space-x-3">
-                      <Clock className="w-5 h-5 text-gray-500 mt-1" />
-                      <div>
-                        <p className="text-sm text-gray-500">Status</p>
-                        <p><span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedIntern.status)}`}>
-                          {selectedIntern.status}
-                        </span></p>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+        <NavbarGeneral title="Kalender Jadwal Peserta Magang" subTitle="Pantau setiap tanggal dari periode setiap peserta magang" />
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+          {/* Judul */}
+          <h1 className="text-3xl font-bold text-gray-900">Kalender Magang</h1>
+
+          {/* Kontainer untuk Navigasi dan Legenda */}
+          <div className="flex flex-col-reverse sm:flex-row items-center gap-6">
+
+            {/* Legenda Pewarnaan */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-white border border-gray-300"></div>
+                <span className="text-sm text-gray-600">Hari Kerja</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-red-50 border border-red-200"></div>
+                <span className="text-sm text-gray-600">Akhir Pekan</span>
+              </div>
+            </div>
+
+            {/* Navigasi Bulan */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className="p-2 cursor-pointer rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-xl font-semibold text-gray-800 min-w-[12rem] text-center">
+                {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </h2>
+              <button
+                onClick={() => navigateMonth(1)}
+                className="p-2 cursor-pointer rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="grid grid-cols-7 bg-gray-50 border-b">
+            {daysOfWeek.map(day => (
+              <div key={day} className="p-4 text-center font-semibold text-gray-700">{day}</div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 auto-rows-fr">
+            {days.map((date, index) => {
+              const internsForDate = date ? internsByDate.get(date.toDateString()) || [] : [];
+              const isWeekend = date && (date.getDay() === 0 || date.getDay() === 6);
+              const isToday = date && date.toDateString() === new Date().toDateString();
+
+              return (
+                <div
+                  key={index}
+                  className={`min-h-32 border-b border-r border-gray-200 p-2 flex flex-col ${!date ? 'bg-gray-50' // Untuk sel kosong
+                    : isWeekend ? 'bg-red-50 hover:bg-red-100'
+                      : 'bg-white hover:bg-gray-50'
+                    }`}
+                >
+                  {date && (
+                    <>
+                      <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+                        {date.getDate()}
                       </div>
-                    </div>
+                      {internsForDate.length > 0 && (
+                        <div className="space-y-1">
+                          {internsForDate.slice(0, 3).map(intern => (
+                            <button
+                              key={intern._id}
+                              onClick={() => handleInternClick(intern)}
+                              className={`w-full cursor-pointer text-left p-1 text-xs ${getStatusColor(intern.status)} rounded truncate transition-colors`}
+                              title={intern.nama}
+                            >
+                              {intern.nama}
+                            </button>
+                          ))}
+
+                          {internsForDate.length > 3 && (
+                            <button
+                              onClick={() => openDayDetailModal(date, internsForDate)}
+                              className="w-full cursor-pointer text-center text-xs font-medium text-blue-600 hover:underline mt-1"
+                            >
+                              +{internsForDate.length - 3} lainnya
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Modal */}
+        {isModalOpen && selectedIntern && (
+          <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+              <div className="p-6 border-b flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-gray-900">Detail Magang</h3>
+                <button onClick={closeModal} className="p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    {/* Data Diri */}
+                    {[
+                      { icon: User, label: 'Nama', value: selectedIntern.nama },
+                      { icon: Hash, label: 'NIM', value: selectedIntern.nim },
+                      { icon: GraduationCap, label: 'Program Studi', value: selectedIntern.prodi },
+                      { icon: Building, label: 'Kampus', value: selectedIntern.kampus },
+                      { icon: Mail, label: 'Email', value: selectedIntern.email },
+                    ].map((item, idx) => item.value && (
+                      <div key={idx} className="flex items-start space-x-3">
+                        <item.icon className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm text-gray-500">{item.label}</p>
+                          <p className="font-semibold">{item.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-4">
+                    {/* Info Magang */}
+                    {[
+                      { icon: Calendar, label: 'Tanggal Mulai', value: formatDate(selectedIntern.tanggalMulai) },
+                      { icon: Calendar, label: 'Tanggal Selesai', value: formatDate(selectedIntern.tanggalSelesai) },
+                      { icon: Building, label: 'Divisi', value: selectedIntern.divisi },
+                      { icon: User, label: 'Pembimbing', value: selectedIntern.pembimbing },
+                    ].map((item, idx) => item.value && (
+                      <div key={idx} className="flex items-start space-x-3">
+                        <item.icon className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm text-gray-500">{item.label}</p>
+                          <p className="font-semibold">{item.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {selectedIntern.status && (
+                      <div className="flex items-start space-x-3">
+                        <Clock className="w-5 h-5 text-gray-500 mt-1" />
+                        <div>
+                          <p className="text-sm text-gray-500">Status</p>
+                          <p><span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedIntern.status)}`}>
+                            {selectedIntern.status}
+                          </span></p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 };
 

@@ -30,6 +30,7 @@ export default function Dashboard() {
     const [userPeriod, setUserPeriod] = useState(null);
     const [userInternData, setUserInternData] = useState(null);
     const [pageLoading, setPageLoading] = useState(false);
+    const [userGrade, setUserGrade] = useState("-");
 
     const route = useRouter();
 
@@ -85,6 +86,39 @@ export default function Dashboard() {
         }
         fetchInterns();
     }, []);
+
+    useEffect(() => {
+        const fetchGrade = async () => {
+            if (!userInternData) return;
+
+            try {
+                const res = await axios.get(
+                    `/api/assessment?internId=${userInternData._id}`
+                );
+
+                if (res.data.success && res.data.assessments.length > 0) {
+                    const aspek = res.data.assessments[0].aspekNilai;
+                    const numbers = Object.values(aspek).filter(
+                        (v) => typeof v === "number" && v >= 0
+                    );
+                    const avg =
+                        numbers.length > 0
+                            ? Math.round(numbers.reduce((a, b) => a + b, 0) / numbers.length)
+                            : "-";
+
+                    setUserGrade(avg);
+                } else {
+                    setUserGrade("-");
+                }
+            } catch (err) {
+                console.error("Gagal mengambil nilai:", err);
+                setUserGrade("-");
+            }
+        };
+
+        fetchGrade();
+    }, [userInternData]);
+
 
     const activeCount = interns.filter((i) => i.status === "aktif").length;
     const mostCommonDivisi = interns.length
@@ -170,6 +204,14 @@ export default function Dashboard() {
                             )}
                         </div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 ">
+                            {isAdmin && (
+                                <button
+                                    onClick={() => route.push('/admin')}
+                                    className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                                >
+                                    Pengaturan Role
+                                </button>
+                            )}
                             <SignOutButton />
                         </div>
                     </div>
@@ -303,6 +345,12 @@ export default function Dashboard() {
                                     icon="🗓️"
                                     color="yellow"
                                 />
+                                <StatCard
+                                    title="Nilai Magang Kamu"
+                                    value={userGrade === "-" ? "Belum ada nilai" : userGrade}
+                                    icon="⭐"
+                                    color="blue"
+                                />
                             </div>
 
                             {/* Menu Cards */}
@@ -342,6 +390,19 @@ export default function Dashboard() {
                         </>
                     )
                 )}
+                {loading ? (
+                    <div className="text-center py-6">Loading...</div>
+                ) : isPembimbing ? (
+                    <div className="mb-6">
+                        <MenuCard
+                            onClick={() => handleMenuClick("/penilaian")}
+                            icon="📝"
+                            title="Penugasan & Penilaian"
+                            description="Penilaian peserta magang"
+                            color="green"
+                        />
+                    </div>
+                ) : null}
             </div>
         </div>
     );

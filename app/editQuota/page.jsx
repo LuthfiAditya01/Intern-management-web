@@ -23,7 +23,7 @@ export default function KelolaKuotaPage() {
 
         try {
             const response = await fetch('/api/quota', {
-                method: 'PUT', // GANTI DI SINI
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
