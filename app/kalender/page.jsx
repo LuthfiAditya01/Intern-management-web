@@ -16,6 +16,7 @@ const normalizeDate = (date) => {
 };
 
 const InternCalendar = () => {
+  const DAILY_QUOTA = 15;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedIntern, setSelectedIntern] = useState(null);
   const [interns, setInterns] = useState([]);
@@ -186,12 +187,19 @@ const InternCalendar = () => {
           <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
               {/* Header Modal */}
-              <div className="p-6 border-b flex justify-between items-center">
+              <div className="p-6 border-b flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">Daftar Magang</p>
                   <h3 className="text-xl font-bold text-gray-900">
                     {formatDate(dayDetail.date)}
                   </h3>
+                  <div className="mt-2 text-sm text-gray-600 flex items-center gap-4">
+                    <span>
+                      <span className="font-semibold text-blue-600">{dayDetail.interns.length}</span> / {DAILY_QUOTA} Slot Terisi
+                    </span>
+                    <span className="font-semibold text-green-600">
+                      {Math.max(0, DAILY_QUOTA - dayDetail.interns.length)} Slot Tersisa
+                    </span>
+                  </div>
                 </div>
                 <button onClick={closeDayDetailModal} className="p-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors">
                   <X className="w-6 h-6" />
@@ -282,39 +290,45 @@ const InternCalendar = () => {
               return (
                 <div
                   key={index}
-                  className={`min-h-32 border-b border-r border-gray-200 p-2 flex flex-col ${!date ? 'bg-gray-50' // Untuk sel kosong
+                  className={`min-h-32 border-b border-r border-gray-200 p-2 flex flex-col justify-between ${!date ? 'bg-gray-50'
                     : isWeekend ? 'bg-red-50 hover:bg-red-100'
                       : 'bg-white hover:bg-gray-50'
                     }`}
                 >
                   {date && (
                     <>
-                      <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {date.getDate()}
-                      </div>
-                      {internsForDate.length > 0 && (
-                        <div className="space-y-1">
-                          {internsForDate.slice(0, 3).map(intern => (
-                            <button
-                              key={intern._id}
-                              onClick={() => handleInternClick(intern)}
-                              className={`w-full cursor-pointer text-left p-1 text-xs ${getStatusColor(intern.status)} rounded truncate transition-colors`}
-                              title={intern.nama}
-                            >
-                              {intern.nama}
-                            </button>
-                          ))}
-
-                          {internsForDate.length > 3 && (
-                            <button
-                              onClick={() => openDayDetailModal(date, internsForDate)}
-                              className="w-full cursor-pointer text-center text-xs font-medium text-blue-600 hover:underline mt-1"
-                            >
-                              +{internsForDate.length - 3} lainnya
-                            </button>
-                          )}
+                      {/* Konten atas */}
+                      <div>
+                        <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+                          {date.getDate()}
                         </div>
-                      )}
+                        {internsForDate.length > 0 && (
+                          <div className="space-y-1">
+                            {internsForDate.slice(0, 3).map(intern => (
+                              <button
+                                key={intern._id}
+                                onClick={() => handleInternClick(intern)}
+                                className={`w-full cursor-pointer text-left p-1 text-xs ${getStatusColor(intern.status)} rounded truncate transition-colors`}
+                                title={intern.nama}
+                              >
+                                {intern.nama}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tombol Detail di bawah */}
+                      <div className="mt-2">
+                        <button
+                          onClick={() => openDayDetailModal(date, internsForDate)}
+                          className="w-full cursor-pointer text-center text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          {internsForDate.length > 3
+                            ? `+${internsForDate.length - 3} lainnya`
+                            : 'Detail'}
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

@@ -4,8 +4,7 @@ import { faTruckField } from '@fortawesome/free-solid-svg-icons';
 import { ArrowLeft, Building, Calendar, CheckCircle, GraduationCap, Hash, User, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
-import SuccessModal from './SuccessModal'; // Import modal sukses
-
+import SuccessModal from './SuccessModal';
 export default function InternDataManagement({
     id,
     nama,
@@ -16,6 +15,7 @@ export default function InternDataManagement({
     tanggalSelesai,
     status,
     divisi,
+    pembimbing,
 }) {
 
     const [newNama, setNewNama] = useState(nama);
@@ -30,10 +30,12 @@ export default function InternDataManagement({
     const [loading, setLoading] = useState(true);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [newDivisi, setNewDivisi] = useState(divisi);
+    const [newPembimbing, setNewPembimbing] = useState(pembimbing);
 
     const handleTanggalMulaiChange = (e) => setNewTanggalMulai(e.target.value);
     const handleTanggalSelesaiChange = (e) => setNewTanggalSelesai(e.target.value);
     const handleDivisiChange = (e) => setNewDivisi(e.target.value);
+    const handlePembimbingChange = (e) => setNewPembimbing(e.target.value);
     const handleStatusChange = (e) => {
         const newStatusValue = e.target.value;
         setNewStatus(newStatusValue);
@@ -100,6 +102,7 @@ export default function InternDataManagement({
                     newTanggalSelesai,
                     newStatus,
                     newDivisi,
+                    newPembimbing
                 }),
             });
 
@@ -120,6 +123,43 @@ export default function InternDataManagement({
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
     };
+
+    const pembimbingOptions = [
+        { value: "", label: "-- Pilih Pembimbing --" },
+        { value: "Ari Rusmasari", label: "Ari Rusmasari" },
+        { value: "Gun Gun Nugraha", label: "Gun Gun Nugraha" },
+        { value: "Evie Ermawati", label: "Evie Ermawati" },
+        { value: "Ahmad Riadi", label: "Ahmad Riadi" },
+        { value: "Alberto Maradona", label: "Alberto Maradona" },
+        { value: "Andika Nur Budiharso", label: "Andika Nur Budiharso" },
+        { value: "Anggi Budi Pratiwi", label: "Anggi Budi Pratiwi" },
+        { value: "Anita Desmarini", label: "Anita Desmarini" },
+        { value: "Bagus Prio Sambodo", label: "Bagus Prio Sambodo" },
+        { value: "Belinda Yena Putri", label: "Belinda Yena Putri" },
+        { value: "Darul Ambardi", label: "Darul Ambardi" },
+        { value: "Erika Haryulistiani", label: "Erika Haryulistiani" },
+        { value: "Faza Nur Fuadina", label: "Faza Nur Fuadina" },
+        { value: "Habni Hamara Azmatiy", label: "Habni Hamara Azmatiy" },
+        { value: "Ikhsan", label: "Ikhsan" },
+        { value: "Indra Kurniawan", label: "Indra Kurniawan" },
+        { value: "Kaisar Samudra", label: "Kaisar Samudra" },
+        { value: "Risdiyanto", label: "Risdiyanto" },
+        { value: "Rizki Abdi Utama", label: "Rizki Abdi Utama" },
+        { value: "Santi Yuli Elida Aritonang", label: "Santi Yuli Elida Aritonang" },
+        { value: "Sari Citra Pratiwi", label: "Sari Citra Pratiwi" },
+        { value: "Sasma Senimawarti M", label: "Sasma Senimawarti M" },
+        { value: "Anne Oktavia Andriyani", label: "Anne Oktavia Andriyani" },
+        { value: "Aprilia Puspita", label: "Aprilia Puspita" },
+        { value: "Erika Santi", label: "Erika Santi" },
+        { value: "Erwan Jafrilda", label: "Erwan Jafrilda" },
+        { value: "Fahroni Agustarita", label: "Fahroni Agustarita" },
+        { value: "Mertha Pessela", label: "Mertha Pessela" },
+        { value: "Muhammad Vicky Lukito", label: "Muhammad Vicky Lukito" },
+        { value: "Muhammad Rafiqo Ardi", label: "Muhammad Rafiqo Ardi" },
+        { value: "Shista Virgo Winatha", label: "Shista Virgo Winatha" },
+        { value: "Viona Rahma Agustin", label: "Viona Rahma Agustin" },
+        { value: "Wasilawati", label: "Wasilawati" },
+    ];
 
     return (
         <>
@@ -297,6 +337,34 @@ export default function InternDataManagement({
                                                 {statusOptions.map((o) => (
                                                     <option key={o.value} value={o.value}>
                                                         {o.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Mentor Section */}
+                                <div className="border-t border-gray-200 pt-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <User className="w-5 h-5 text-blue-600" />
+                                        Pemilihan Pembimbing
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Pilih Pembimbing
+                                            </label>
+                                            <select
+                                                name="pembimbing"
+                                                value={newPembimbing}
+                                                onChange={handlePembimbingChange}
+                                                required
+                                                className="w-full cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            >
+                                                {pembimbingOptions.map((option) => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
                                                     </option>
                                                 ))}
                                             </select>

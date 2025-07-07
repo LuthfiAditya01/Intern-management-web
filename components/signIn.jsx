@@ -32,7 +32,7 @@ export default function Login() {
         tanggalSelesai: "",
         divisi: "-",
         status: "pending",
-        pembimbing: "Ari Rusmasari",
+        pembimbing: "-",
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +46,6 @@ export default function Login() {
 
     const router = useRouter();
 
-    // Function to check if NIK already exists
     const checkNikExists = async (nik) => {
         try {
             const response = await fetch(`/api/check-nik?nik=${nik}`);
@@ -68,7 +67,6 @@ export default function Login() {
         if (['nama', 'nim', 'nik', 'prodi', 'kampus', 'tanggalMulai', 'tanggalSelesai', 'pembimbing'].includes(name)) {
             setForm({ ...form, [name]: value });
 
-            // Check NIK when user types
             if (name === 'nik' && value.length >= 16) {
                 const exists = await checkNikExists(value);
                 if (exists) {
@@ -106,7 +104,6 @@ export default function Login() {
             if (isLogin) {
                 await signInWithEmailAndPassword(formulir.email, formulir.password);
             } else {
-                // Check NIK one more time before registration
                 const nikExists = await checkNikExists(form.nik);
                 if (nikExists) {
                     setError("NIK sudah terdaftar, silakan gunakan NIK lain.");
@@ -217,10 +214,9 @@ export default function Login() {
     ];
 
     const pembimbingOptions = [
-        { value: "", label: "-- Pilih Pembimbing --" },
-        { value: "Ari Rusmasari", label: "Ari Rusmasari" },
-        { value: "Gun Gun Nugraha", label: "Gun Gun Nugraha" },
-    ]
+        { value: "-", label: "-"},
+    ];
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-row items-center justify-center gap-3">

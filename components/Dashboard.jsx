@@ -31,6 +31,7 @@ export default function Dashboard() {
     const [userInternData, setUserInternData] = useState(null);
     const [pageLoading, setPageLoading] = useState(false);
     const [userGrade, setUserGrade] = useState("-");
+    const [userMentor, setUserMentor] = useState("-");
 
     const route = useRouter();
 
@@ -67,6 +68,7 @@ export default function Dashboard() {
                 setUserInternData(me);
                 setUserStatus(me.status ?? "pending");
                 setUserDivision(me.divisi ?? "-");
+                setUserMentor(me.pembimbing ?? "-")
                 setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
             }
         }
@@ -337,6 +339,12 @@ export default function Dashboard() {
                                     title="Divisi Kamu Saat Ini"
                                     value={userDivision}
                                     icon="🏛️"
+                                    color="blue"
+                                />
+                                <StatCard
+                                    title="Pembimbing Kamu Saat Ini"
+                                    value={userMentor}
+                                    icon="👤"
                                     color="blue"
                                 />
                                 <StatCard
