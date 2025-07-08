@@ -35,12 +35,12 @@ export default function DivisionCard({ divisi, interns, pembimbing }) {
                     </span>
                 </div>
 
-                <p className="text-sm text-gray-500 mb-3">Pembimbing Divisi: {pembimbing}</p>
+                <p className="text-sm text-gray-500 mb-3">Pembimbing Tim: {pembimbing}</p>
 
                 {/* Division Indicator */}
                 <div className="flex items-center space-x-2">
                     <div className={`w-3 h-3 rounded-full ${colorClass.replace('text-', 'bg-').replace('bg-', 'bg-').split(' ')[1]}`}></div>
-                    <span className="text-sm text-gray-500">Divisi {divisi.charAt(0).toUpperCase() + divisi.slice(1)}</span>
+                    <span className="text-sm text-gray-500">Tim {divisi.charAt(0).toUpperCase() + divisi.slice(1)}</span>
                 </div>
             </div>
 

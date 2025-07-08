@@ -43,8 +43,8 @@ const internSchema = new Schema({
     },
     pembimbing: {
         type: String,
-        enum: ["-", "Ari Rusmasari", "Gun Gun Nugraha", "Evie Ermawati", "Ahmad Riadi", "Alberto Maradona", "Andika Nur Budiharso", "Anggi Budi Pratiwi", "Anita Desmarini", "Bagus Prio Sambodo", "Belinda Yena Putri", "Darul Ambardi", "Erika Haryulistiani", "Faza Nur Fuadina", "Habni Hamara Azmatiy", "Ikhsan", "Indra Kurniawan", "Kaisar Samudra", "Risdiyanto", "Rizki Abdi Utama", "Santi Yuli Elida Aritonang", "Sari Citra Pratiwi", "Sasma Senimawarti M", "Anne Oktavia Andriyani", "Aprilia Puspita", "Erika Santi", "Erwan Jafrilda", "Fahroni Agustarita", "Mertha Pessela", "Muhammad Vicky Lukito", "Muhammad Rafiqo Ardi", "Shista Virgo Winatha", "Viona Rahma Agustin", "Wasilawati"],
-        default: "-",
+        enum: ["Belum Di Set", "Ari Rusmasari", "Gun Gun Nugraha", "Evie Ermawati", "Ahmad Riadi", "Alberto Maradona", "Andika Nur Budiharso", "Anggi Budi Pratiwi", "Anita Desmarini", "Bagus Prio Sambodo", "Belinda Yena Putri", "Darul Ambardi", "Erika Haryulistiani", "Faza Nur Fuadina", "Habni Hamara Azmatiy", "Ikhsan", "Indra Kurniawan", "Kaisar Samudra", "Risdiyanto", "Rizki Abdi Utama", "Santi Yuli Elida Aritonang", "Sari Citra Pratiwi", "Sasma Senimawarti M", "Anne Oktavia Andriyani", "Aprilia Puspita", "Erika Santi", "Erwan Jafrilda", "Fahroni Agustarita", "Mertha Pessela", "Muhammad Vicky Lukito", "Muhammad Rafiqo Ardi", "Shista Virgo Winatha", "Viona Rahma Agustin", "Wasilawati"],
+        default: "Belum Di Set",
     },
     userId: {
         type: String,

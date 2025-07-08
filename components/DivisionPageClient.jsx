@@ -84,15 +84,15 @@ export default function DivisionPageClient({ interns }) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
             <div className='p-6 max-w-7xl mx-auto'>
-                <NavbarGeneral title="Dashboard Penempatan Divisi" subTitle="Kelola penempatan divisi untuk peserta magang" />
+                <NavbarGeneral title="Dashboard Penempatan Tim" subTitle="Kelola penempatan tim untuk peserta magang" />
                 <div className="bg-white shadow-sm rounded-xl mt-6">
                     <div className="max-w-7xl mx-auto px-6 py-8">
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                Informasi Divisi & Penempatan
+                                Informasi Tim & Penempatan
                             </h1>
                             <p className="text-gray-600">
-                                Kelola dan pantau distribusi anak magang di setiap divisi
+                                Kelola dan pantau distribusi anak magang di setiap tim
                             </p>
                         </div>
                         <div className="flex justify-center space-x-8 text-center">
@@ -102,7 +102,7 @@ export default function DivisionPageClient({ interns }) {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-purple-600">{totalDivisions}</p>
-                                <p className="text-sm text-gray-600">Total Divisi</p>
+                                <p className="text-sm text-gray-600">Total Tim</p>
                             </div>
                         </div>
                     </div>
@@ -124,7 +124,7 @@ export default function DivisionPageClient({ interns }) {
                                 onClick={handleRoute}
                                 className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm hover:shadow-md transition-all duration-200"
                             >
-                                Atur Penempatan Divisi
+                                Atur Penempatan Tim
                             </button>
                         </div>
                     )}

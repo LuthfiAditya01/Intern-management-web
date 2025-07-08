@@ -179,7 +179,7 @@ export default function InternDataManagement({
                             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                                 <Users className="w-8 h-8 text-blue-600" />
                             </div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Data Magang</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Data Peserta Magang</h1>
                             <p className="text-gray-600">Lengkapi formulir di bawah untuk merubah data anak magang baru</p>
                         </div>
                     </div>

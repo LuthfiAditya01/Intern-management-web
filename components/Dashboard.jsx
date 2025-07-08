@@ -242,7 +242,7 @@ export default function Dashboard() {
                                     color="blue"
                                 />
                                 <StatCard
-                                    title="Divisi Terbanyak"
+                                    title="Tim Dengan Peserta Magang Terbanyak"
                                     value={mostPopularDivisi || '-'}
                                     icon="🏆"
                                     color="yellow"
@@ -264,15 +264,15 @@ export default function Dashboard() {
                                     <MenuCard
                                         onClick={() => handleMenuClick("/dataMagang")}
                                         icon="👥"
-                                        title="Data Anak Magang"
-                                        description="Kelola informasi anak magang"
+                                        title="Data Peserta Magang"
+                                        description="Kelola informasi peserta magang"
                                         color="green"
                                     />
                                     <MenuCard
                                         onClick={() => handleMenuClick("/divisi")}
                                         icon="🏢"
-                                        title="Divisi & Penempatan"
-                                        description="Atur divisi dan penempatan"
+                                        title="Tim & Penempatan"
+                                        description="Atur tim dan penempatan"
                                         color="purple"
                                     />
                                     <MenuCard
@@ -294,13 +294,6 @@ export default function Dashboard() {
                                         <div>
                                             <p className="font-medium text-gray-800">Status Aktif</p>
                                             <p className="text-sm text-gray-600">{activeCount} dari {interns.length} anak magang</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                        <div className="text-2xl">🎯</div>
-                                        <div>
-                                            <p className="font-medium text-gray-800">Divisi Populer</p>
-                                            <p className="text-sm text-gray-600">{mostPopularDivisi || 'Belum ada data'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -336,7 +329,7 @@ export default function Dashboard() {
                                     color="green"
                                 />
                                 <StatCard
-                                    title="Divisi Kamu Saat Ini"
+                                    title="Tim Kamu Saat Ini"
                                     value={userDivision}
                                     icon="🏛️"
                                     color="blue"
@@ -364,34 +357,20 @@ export default function Dashboard() {
                             {/* Menu Cards */}
                             <div className="mb-6">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                                     <MenuCard
-                                        onClick={() => handleMenuClick("/kalender")}
-                                        icon="📅"
-                                        title="Kalender Jadwal"
-                                        description="Lihat dan kelola jadwal magang"
+                                        onClick={() => handleMenuClick("/dashboard")}
+                                        icon="🗓️"
+                                        title="Jadwal Tersedia Kesempatan Magang"
+                                        description="Lihat ketersediaan jadwal magang"
                                         color="blue"
                                     />
                                     <MenuCard
                                         onClick={() => handleMenuClick("/dataMagang")}
-                                        icon="👥"
-                                        title="Data Anak Magang"
-                                        description="Kelola informasi anak magang"
+                                        icon="📓"
+                                        title="Absensi"
+                                        description="Presensi untuk peserta magang"
                                         color="green"
-                                    />
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/divisi")}
-                                        icon="🏢"
-                                        title="Divisi & Penempatan"
-                                        description="Atur divisi dan penempatan"
-                                        color="purple"
-                                    />
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/quotaManagement")}
-                                        icon="📊"
-                                        title="Kuota & Monitoring"
-                                        description="Monitor kuota dan progress"
-                                        color="orange"
                                     />
                                 </div>
                             </div>

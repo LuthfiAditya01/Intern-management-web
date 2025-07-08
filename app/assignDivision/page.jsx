@@ -54,8 +54,8 @@ export default function page() {
                                             Hi, {user.displayName || user.email}
                                         </p>
                                     )}
-                                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Penempatan Divisi</h1>
-                                    <p className="text-gray-600 md:block hidden">Kelola penempatan divisi anak magang</p>
+                                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Penempatan Tim</h1>
+                                    <p className="text-gray-600 md:block hidden">Kelola penempatan tim anak magang</p>
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:mx-0 mx-auto sm:items-center gap-5 ">

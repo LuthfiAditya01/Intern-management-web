@@ -120,8 +120,8 @@ export default function DivisionForm({ id, nama, divisi }) {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                             <Users className="w-8 h-8 text-blue-600" />
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Penempatan Divisi Anak Magang</h1>
-                        <p className="text-gray-600">Lengkapi formulir di bawah untuk memilih penempatan divisi</p>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Penempatan Tim Anak Magang</h1>
+                        <p className="text-gray-600">Lengkapi formulir di bawah untuk memilih penempatan Tim</p>
                     </div>
                 </div>
 
@@ -254,19 +254,19 @@ export default function DivisionForm({ id, nama, divisi }) {
                                 </h3>
 
                                 <div className="grid grid-cols-1 gap-4">
-                                    {/* Divisi */}
+                                    {/* Tim */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Divisi
+                                            Tim
                                         </label>
                                         <select
-                                            name="divisi"
+                                            name="tim"
                                             value={newDivisi}
                                             onChange={handleDivisiChange}
                                             required
                                             className="w-full cursor-pointer px-4 py-3 border rounded-lg"
                                         >
-                                            <option value="">Pilih Divisi</option>
+                                            <option value="">Pilih Tim</option>
                                             {divisionOptions.map((o) => (
                                                 <option key={o.value} value={o.value}>
                                                     {o.label}
@@ -350,7 +350,7 @@ export default function DivisionForm({ id, nama, divisi }) {
             <SuccessModal
                 isOpen={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
-                title="Divisi Berhasil Diupdate!"
+                title="Tim Berhasil Diupdate!"
                 message="Selamat, data berhasil diperbarui."
                 buttonText="Lihat Semua Data"
                 redirectUrl="/assignDivision"

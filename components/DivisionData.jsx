@@ -208,7 +208,7 @@ export default function DivisionData(intern) {
                                     <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Program Studi</th>
                                     <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Universitas</th>
                                     <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Timeline</th>
-                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Divisi</th>
+                                    <th className="px-6 py-3 text-left text-sm font-medium bg-neutral-100 text-black">Tim</th>
                                     <th className="px-6 py-3 text-sm bg-neutral-100 text-black">Aksi</th>
                                 </tr>
                             </thead>

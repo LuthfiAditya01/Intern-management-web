@@ -32,7 +32,7 @@ export default function Login() {
         tanggalSelesai: "",
         divisi: "-",
         status: "pending",
-        pembimbing: "-",
+        pembimbing: "Belum Di Set",
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -211,10 +211,6 @@ export default function Login() {
         { value: "selesai", label: "Selesai", color: "text-blue-600" },
         { value: "dikeluarkan", label: "Dikeluarkan", color: "text-red-600" },
         { value: "pending", label: "Pending", color: "text-yellow-600" },
-    ];
-
-    const pembimbingOptions = [
-        { value: "-", label: "-"},
     ];
 
 
@@ -468,7 +464,7 @@ export default function Login() {
                                 </div>
 
                                 {/* Mentor Section */}
-                                <div className="border-t border-gray-200 pt-6">
+                                {/* <div className="border-t border-gray-200 pt-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                         <User className="w-5 h-5 text-blue-600" />
                                         Pemilihan Pembimbing
@@ -476,7 +472,7 @@ export default function Login() {
                                     <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Pilih Pembimbing
+                                                *Pembimbing Akan Di-Set oleh Admin setelah anda mendaftar
                                             </label>
                                             <select
                                                 name="pembimbing"
@@ -493,7 +489,7 @@ export default function Login() {
                                             </select>
                                         </div>
                                     </div>
-                                </div>
+                                </div> */}
                             </>
                         )}
 
@@ -552,7 +548,7 @@ export default function Login() {
                                     tanggalSelesai: "",
                                     divisi: "-",
                                     status: "pending",
-                                    pembimbing: "",
+                                    pembimbing: "Belum Di Set",
                                 });
                                 setError("");
                                 setNikError("");
@@ -563,7 +559,6 @@ export default function Login() {
                         </button>
                     </div>
                 </div>
-
                 <p className="text-center text-gray-600 text-sm mt-8">
                     © 2025 BPS Kota Bandar Lampung
                 </p>
