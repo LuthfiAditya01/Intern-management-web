@@ -54,6 +54,7 @@ export default function Dashboard() {
                     console.log("👑 Ini admin");
                 } else {
                     console.log("🙅‍♂️ Bukan admin");
+                    console.log(token);
                 }
             }
         });
@@ -282,6 +283,35 @@ export default function Dashboard() {
                                         description="Monitor kuota dan progress"
                                         color="orange"
                                     />
+                                    <MenuCard
+                                        icon="📑"
+                                        title="Pemantauan Daftar Hadir"
+                                        description="Pantau Riwayat Daftar Hadir Peserta Magang"
+                                        color="blue"
+                                        onClick={() => handleMenuClick("/kalender")}
+                                    />
+
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/dataMagang")}
+                                        icon="⚙️"
+                                        title="Pengaturan Daftar Hadir"
+                                        description="Atur batas jam masuk, pulang, batas jarak daftar hadir, dan titik lokasi pusat"
+                                        color="green"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/divisi")}
+                                        icon="🎨"
+                                        title="Template Sertifikat"
+                                        description="Atur Template Sertifikat"
+                                        color="purple"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/quotaManagement")}
+                                        icon="✅"
+                                        title="Verifikasi Sertifikat"
+                                        description="Verifikasi Peserta yang mendapatkan sertifikat"
+                                        color="orange"
+                                    />
                                 </div>
                             </div>
 
@@ -355,25 +385,54 @@ export default function Dashboard() {
                             </div>
 
                             {/* Menu Cards */}
-                            <div className="mb-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/dashboard")}
-                                        icon="🗓️"
-                                        title="Jadwal Tersedia Kesempatan Magang"
-                                        description="Lihat ketersediaan jadwal magang"
-                                        color="blue"
-                                    />
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/dataMagang")}
-                                        icon="📓"
-                                        title="Absensi"
-                                        description="Presensi untuk peserta magang"
-                                        color="green"
-                                    />
-                                </div>
-                            </div>
+                            {
+                                userStatus=="pending"&&(
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
+                                        <div className="grid grid-cols-1 gap-6">
+                                            <MenuCard
+                                                onClick={() => handleMenuClick("/dashboard")}
+                                                icon="🗓️"
+                                                title="Jadwal Tersedia Kesempatan Magang"
+                                                description="Lihat ketersediaan jadwal magang"
+                                                color="blue"
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            }{
+                                userStatus!=="pending"&&(
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                            <MenuCard
+                                                onClick={() => handleMenuClick("/dashboard")}
+                                                icon="🗓️"
+                                                title="Jadwal Tersedia Kesempatan Magang"
+                                                description="Lihat ketersediaan jadwal magang"
+                                                color="blue"
+                                            />
+                                            <MenuCard
+                                                onClick={() => handleMenuClick("/dataMagang")}
+                                                icon="🔄"
+                                                title="Histori Daftar Hadir"
+                                                description="Lihat histori daftar hadirmu!"
+                                                color="green"
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            }
+                            
+                            {
+                                userStatus!=="pending"&&(
+                                    <div className="fixed bottom-5 right-5 hover:bottom-7 transition-all ease-out duration-200 z-50">
+                                        <Link href={"/absen"} className="bg-blue-500 focus:bg-blue-700 focus:translate-y-8 rounded-2xl hover:bg-blue-700 hover:px-6 hover:py-4 hover:rounded-xl text-white px-4 py-3 hover:shadow-lg font-medium transition-all ease-out duration-300"> 
+                                            ✅ Isi Daftar Hadir
+                                        </Link>
+                                    </div>
+                                )
+                            }
                         </>
                     )
                 )}

@@ -7,6 +7,30 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month");
+    const email = searchParams.get("email")
+
+    // Jika ada parameter email, cari user berdasarkan email
+    if (email) {
+        try {
+            const user = await User.findOne({ email });
+            if (!user) {
+                return NextResponse.json({ 
+                    success: false, 
+                    message: "User tidak ditemukan"
+                }, { status: 404 });
+            }
+            return NextResponse.json({ 
+                success: true, 
+                username: user.username 
+            });
+        } catch (error) {
+            console.error("Error mencari user:", error);
+            return NextResponse.json({ 
+                success: false, 
+                message: "Terjadi kesalahan saat mencari user"
+            }, { status: 500 });
+        }
+    }
 
     if (!month) {
         const interns = await Intern.find();

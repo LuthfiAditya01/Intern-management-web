@@ -1,9 +1,8 @@
-const { Schema, default: mongoose } = require("mongoose");
+import mongoose, { Schema } from "mongoose";
 
 const DaftarHadirScheme = new Schema({
     idUser: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String,  // Mengubah tipe dari ObjectId ke String untuk kompatibilitas dengan Firebase uid
         required: true
     },
     absenDate: {
@@ -26,5 +25,7 @@ const DaftarHadirScheme = new Schema({
     timestamps: true
 });
 
-const DaftarHadir = mongoose.model('DaftarHadir', DaftarHadirScheme);
-module.exports = DaftarHadir;
+// Cek apakah model sudah ada untuk mencegah error saat hot-reloading
+const DaftarHadir = mongoose.models.DaftarHadir || mongoose.model('DaftarHadir', DaftarHadirScheme);
+
+export default DaftarHadir;
