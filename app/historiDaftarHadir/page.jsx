@@ -1,7 +1,9 @@
-export default function lihatDaftarHadir(){
+import HistoriDaftarHadir from '../../components/HistoriDaftarHadir';
+
+export default function historiDaftarHadir(){
     return(
         <div>
-            <historiDaftarHadir />
+            <HistoriDaftarHadir />
         </div>
     )
 }

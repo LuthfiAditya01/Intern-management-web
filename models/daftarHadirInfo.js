@@ -17,6 +17,10 @@ const DaftarHadirScheme = new Schema({
         type: Number,
         required: true,
     },
+    keteranganMasuk: {
+        type: String,
+        required: true,
+    },
     messageText: {
         type: String,
         required: true

@@ -413,7 +413,7 @@ export default function Dashboard() {
                                                 color="blue"
                                             />
                                             <MenuCard
-                                                onClick={() => handleMenuClick("/dataMagang")}
+                                                onClick={() => handleMenuClick("/historiDaftarHadir")}
                                                 icon="🔄"
                                                 title="Histori Daftar Hadir"
                                                 description="Lihat histori daftar hadirmu!"
