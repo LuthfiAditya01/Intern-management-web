@@ -2,13 +2,22 @@
 
 import NavbarGeneral from "@/components/NavbarGeneral";
 import ProtectedRoute from "@/components/ProtectedRoutes";
+import { auth } from "./../firebase/config";
 import React, { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { app } from "@/app/firebase/config";
+import axios from "axios";
 
 export default function PenilaianPage() {
     const [interns, setInterns] = useState([]);
+    const [user, setUser] = useState(null);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isPembimbing, setIsPembimbing] = useState(false);
+    const [currentMentor, setCurrentMentor] = useState(null);
+    const [mentor, setMentor] = useState([]);
     const [form, setForm] = useState({
         komunikasi: '',
         kerjaTim: '',
@@ -19,7 +28,62 @@ export default function PenilaianPage() {
     });
     const [assessments, setAssessments] = useState([]);
 
+    const auth = getAuth(app);
+
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setUser(user);
+                const token = await user.getIdTokenResult();
+                const admin = token.claims.role === "admin";
+                const pembimbing = token.claims.role === "pembimbing";
+                setIsAdmin(admin);
+                setIsPembimbing(pembimbing);
+                if (token.claims.role === "pembimbing") {
+                    console.log("ini pembimbing");
+                } else {
+                    console.log("ini bukan pembimbing")
+                }
+                if (token.claims.role === "admin") {
+                    console.log("👑 Ini admin");
+                } else {
+                    console.log("🙅‍♂️ Bukan admin");
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        async function fetchMentors() {
+            try {
+                const res = await axios.get("/api/mentor");
+                setMentor(res.data);
+            } catch (error) {
+                console.error("Failed to fetch mentors:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchMentors();
+    }, []);
+
+    useEffect(() => {
+        if (user && mentor && mentor.length > 0) {
+            const me = mentor.find((m) => m.userId === user.uid);
+            if (me) {
+                setCurrentMentor(me);
+            }
+        }
+    }, [user, mentor])
+
+    useEffect(() => {
+        if (!currentMentor) {
+            if (!auth.currentUser) setLoading(false);
+            return;
+        }
+
         const fetchInterns = async () => {
             try {
                 setLoading(true);
@@ -31,10 +95,11 @@ export default function PenilaianPage() {
 
                 const data = await response.json();
 
-                const selesaiOnly = (data.interns || []).filter(
-                    (i) => i.status === "selesai"
+                const myFinishedMentees = (data.interns || []).filter(
+                    (i) => i.status === "selesai" && i.pembimbing?._id === currentMentor._id
                 );
-                setInterns(selesaiOnly);
+
+                setInterns(myFinishedMentees);
             } catch (error) {
                 console.error("Error fetching interns:", error);
                 alert("Gagal memuat data peserta magang. Silakan coba lagi.");
@@ -45,7 +110,9 @@ export default function PenilaianPage() {
         };
 
         fetchInterns();
-    }, []);
+    }, [currentMentor]);
+
+    console.log("HEY", currentMentor)
 
     useEffect(() => {
         const fetchAssessments = async () => {
@@ -69,7 +136,6 @@ export default function PenilaianPage() {
     };
 
     const handleSubmit = async () => {
-        // Validasi form
         const requiredFields = ['komunikasi', 'kerjaTim', 'kedisiplinan', 'inisiatif', 'tanggungJawab'];
         const emptyFields = requiredFields.filter(field => !form[field] || form[field] === '');
 
@@ -78,7 +144,6 @@ export default function PenilaianPage() {
             return;
         }
 
-        // Validasi range nilai
         const invalidValues = requiredFields.filter(field => {
             const value = parseInt(form[field]);
             return isNaN(value) || value < 0 || value > 100;
@@ -106,7 +171,7 @@ export default function PenilaianPage() {
                         tanggungJawab: parseInt(form.tanggungJawab),
                         catatan: form.catatan,
                     },
-                    penilai: selected.pembimbing,
+                    penilai: currentMentor._id,
                 }),
             });
 
@@ -116,6 +181,7 @@ export default function PenilaianPage() {
             }
 
             const result = await response.json();
+            setAssessments(prev => [...prev, result.assessment]);
             alert("Penilaian berhasil disimpan!");
             setSelected(null);
             setForm({
@@ -141,8 +207,9 @@ export default function PenilaianPage() {
     const getTotalNilai = (aspekNilai) => {
         if (!aspekNilai) return null;
         const values = Object.values(aspekNilai).filter(val => typeof val === "number");
+        if (values.length === 0) return "-";
         const total = values.reduce((a, b) => a + b, 0);
-        return Math.round(total / values.length); // rata-rata
+        return Math.round(total / values.length);
     };
 
 
@@ -173,13 +240,13 @@ export default function PenilaianPage() {
             <div className="min-h-screen bg-gray-50 py-8">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                    <NavbarGeneral title="Penilaian Peserta Magang" subTitle="Berikan penilaian untuk peserta magang" />
+                    <NavbarGeneral title="Penilaian Peserta Magang" subTitle="Berikan penilaian untuk peserta magang bimbingan Anda" />
 
                     {/* Intern List */}
                     <div className="bg-white rounded-lg shadow-sm mb-8">
                         <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">Daftar Peserta Magang</h2>
-                            <p className="text-sm text-gray-600 mt-1">Pilih peserta yang akan dinilai</p>
+                            <h2 className="text-lg font-semibold text-gray-900">Daftar Peserta Bimbingan (Selesai)</h2>
+                            <p className="text-sm text-gray-600 mt-1">Pilih peserta yang akan dinilai dari daftar di bawah ini.</p>
                         </div>
                         <div className="p-6">
                             {interns.length === 0 ? (
@@ -187,8 +254,8 @@ export default function PenilaianPage() {
                                     <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada peserta magang</h3>
-                                    <p className="text-gray-500">Tidak ada data peserta magang yang tersedia untuk dinilai.</p>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Anak Bimbingan</h3>
+                                    <p className="text-gray-500">Tidak ada data peserta magang bimbingan Anda yang telah selesai.</p>
                                     <button
                                         onClick={() => window.location.reload()}
                                         className="mt-4 cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -213,7 +280,7 @@ export default function PenilaianPage() {
                                                         Nilai: {
                                                             getAssessmentByInternId(intern._id)
                                                                 ? `${getTotalNilai(getAssessmentByInternId(intern._id).aspekNilai)}`
-                                                                : "Belum ada nilai"
+                                                                : "Belum dinilai"
                                                         }
                                                     </p>
 
@@ -223,7 +290,7 @@ export default function PenilaianPage() {
                                                 onClick={() => setSelected(intern)}
                                                 className="px-4 py-2 bg-blue-600 cursor-pointer text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                             >
-                                                Nilai
+                                                {getAssessmentByInternId(intern._id) ? 'Edit Nilai' : 'Beri Nilai'}
                                             </button>
                                         </div>
                                     ))}

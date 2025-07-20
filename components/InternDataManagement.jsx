@@ -28,9 +28,11 @@ export default function InternDataManagement({
     const [interns, setInterns] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(true);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [newDivisi, setNewDivisi] = useState(divisi);
-    const [newPembimbing, setNewPembimbing] = useState(pembimbing);
+    const [newPembimbingId, setNewPembimbingId] = useState(pembimbing?._id || "");
+    const [pembimbingList, setPembimbingList] = useState([]);
 
     const handleTanggalMulaiChange = (e) => setNewTanggalMulai(e.target.value);
     const handleTanggalSelesaiChange = (e) => setNewTanggalSelesai(e.target.value);
@@ -46,6 +48,27 @@ export default function InternDataManagement({
     };
 
     const route = useRouter();
+
+    useEffect(() => {
+        const fetchAllPembimbings = async () => {
+            try {
+                const res = await fetch('http://localhost:3000/api/mentor', {
+                    cache: 'no-store',
+                });
+                if (!res.ok) throw new Error("Gagal mengambil daftar pembimbing");
+
+                const data = await res.json();
+                setPembimbingList(data);
+            } catch (error) {
+                console.error("Error fetching pembimbings: ", error);
+                setError(error.message);
+            } finally {
+                setIsFetching(false);
+            }
+        };
+
+        fetchAllPembimbings();
+    }, []);
 
     useEffect(() => {
         const fetchInterns = async () => {
@@ -87,6 +110,12 @@ export default function InternDataManagement({
         e.preventDefault();
         setLoading(true);
 
+        if (newStatus === 'aktif' && !newPembimbingId) {
+            alert('Silakan pilih pembimbing untuk status aktif.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch(`http://localhost:3000/api/intern/${id}`, {
                 method: 'PUT',
@@ -102,7 +131,7 @@ export default function InternDataManagement({
                     newTanggalSelesai,
                     newStatus,
                     newDivisi,
-                    newPembimbing
+                    newPembimbing: newPembimbingId,
                 }),
             });
 
@@ -123,43 +152,6 @@ export default function InternDataManagement({
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
     };
-
-    const pembimbingOptions = [
-        { value: "", label: "-- Pilih Pembimbing --" },
-        { value: "Ari Rusmasari", label: "Ari Rusmasari" },
-        { value: "Gun Gun Nugraha", label: "Gun Gun Nugraha" },
-        { value: "Evie Ermawati", label: "Evie Ermawati" },
-        { value: "Ahmad Riadi", label: "Ahmad Riadi" },
-        { value: "Alberto Maradona", label: "Alberto Maradona" },
-        { value: "Andika Nur Budiharso", label: "Andika Nur Budiharso" },
-        { value: "Anggi Budi Pratiwi", label: "Anggi Budi Pratiwi" },
-        { value: "Anita Desmarini", label: "Anita Desmarini" },
-        { value: "Bagus Prio Sambodo", label: "Bagus Prio Sambodo" },
-        { value: "Belinda Yena Putri", label: "Belinda Yena Putri" },
-        { value: "Darul Ambardi", label: "Darul Ambardi" },
-        { value: "Erika Haryulistiani", label: "Erika Haryulistiani" },
-        { value: "Faza Nur Fuadina", label: "Faza Nur Fuadina" },
-        { value: "Habni Hamara Azmatiy", label: "Habni Hamara Azmatiy" },
-        { value: "Ikhsan", label: "Ikhsan" },
-        { value: "Indra Kurniawan", label: "Indra Kurniawan" },
-        { value: "Kaisar Samudra", label: "Kaisar Samudra" },
-        { value: "Risdiyanto", label: "Risdiyanto" },
-        { value: "Rizki Abdi Utama", label: "Rizki Abdi Utama" },
-        { value: "Santi Yuli Elida Aritonang", label: "Santi Yuli Elida Aritonang" },
-        { value: "Sari Citra Pratiwi", label: "Sari Citra Pratiwi" },
-        { value: "Sasma Senimawarti M", label: "Sasma Senimawarti M" },
-        { value: "Anne Oktavia Andriyani", label: "Anne Oktavia Andriyani" },
-        { value: "Aprilia Puspita", label: "Aprilia Puspita" },
-        { value: "Erika Santi", label: "Erika Santi" },
-        { value: "Erwan Jafrilda", label: "Erwan Jafrilda" },
-        { value: "Fahroni Agustarita", label: "Fahroni Agustarita" },
-        { value: "Mertha Pessela", label: "Mertha Pessela" },
-        { value: "Muhammad Vicky Lukito", label: "Muhammad Vicky Lukito" },
-        { value: "Muhammad Rafiqo Ardi", label: "Muhammad Rafiqo Ardi" },
-        { value: "Shista Virgo Winatha", label: "Shista Virgo Winatha" },
-        { value: "Viona Rahma Agustin", label: "Viona Rahma Agustin" },
-        { value: "Wasilawati", label: "Wasilawati" },
-    ];
 
     return (
         <>
@@ -350,25 +342,23 @@ export default function InternDataManagement({
                                         <User className="w-5 h-5 text-blue-600" />
                                         Pemilihan Pembimbing
                                     </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Pilih Pembimbing
-                                            </label>
-                                            <select
-                                                name="pembimbing"
-                                                value={newPembimbing}
-                                                onChange={handlePembimbingChange}
-                                                required
-                                                className="w-full cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                            >
-                                                {pembimbingOptions.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Pilih Pembimbing
+                                        </label>
+                                        <select
+                                            name="pembimbing"
+                                            value={newPembimbingId}
+                                            onChange={(e) => setNewPembimbingId(e.target.value)}
+                                            className="w-full cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="">-- Tidak Ada / Belum Di Set --</option>
+                                            {pembimbingList.map((p) => (
+                                                <option key={p._id} value={p._id}>
+                                                    {p.nama}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 

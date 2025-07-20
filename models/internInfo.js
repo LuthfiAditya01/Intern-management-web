@@ -2,6 +2,17 @@ import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
 const internSchema = new Schema({
+    userId: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true,
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     nama: {
         type: String,
         required: true,
@@ -13,8 +24,8 @@ const internSchema = new Schema({
     nik: {
         type: String,
         required: true,
-        index: true,
         unique: true,
+        index: true,
     },
     prodi: {
         type: String,
@@ -39,21 +50,13 @@ const internSchema = new Schema({
     status: {
         type: String,
         enum: ['aktif', 'selesai', 'dikeluarkan', 'pending'],
-        required: false,
+        default: 'pending',
     },
     pembimbing: {
-        type: String,
-        enum: ["Belum Di Set", "Ari Rusmasari", "Gun Gun Nugraha", "Evie Ermawati", "Ahmad Riadi", "Alberto Maradona", "Andika Nur Budiharso", "Anggi Budi Pratiwi", "Anita Desmarini", "Bagus Prio Sambodo", "Belinda Yena Putri", "Darul Ambardi", "Erika Haryulistiani", "Faza Nur Fuadina", "Habni Hamara Azmatiy", "Ikhsan", "Indra Kurniawan", "Kaisar Samudra", "Risdiyanto", "Rizki Abdi Utama", "Santi Yuli Elida Aritonang", "Sari Citra Pratiwi", "Sasma Senimawarti M", "Anne Oktavia Andriyani", "Aprilia Puspita", "Erika Santi", "Erwan Jafrilda", "Fahroni Agustarita", "Mertha Pessela", "Muhammad Vicky Lukito", "Muhammad Rafiqo Ardi", "Shista Virgo Winatha", "Viona Rahma Agustin", "Wasilawati"],
-        default: "Belum Di Set",
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pembimbing',
+        default: null,
     },
-    userId: {
-        type: String,
-        index: true,
-    },
-    email: {
-        type: String,
-        
-    }
 }, {
     timestamps: true
 });
