@@ -39,72 +39,73 @@ export default function TemplatePage() {
           id: 1,
           label: "Judul",
           value: "Sertifikat",
-          top: 60,
-          left: 250,
-          fontSize: 65,
+          top: 25,
+          left: 28,
+          fontSize: 25,
           fontWeight: "bold",
         },
         {
           id: 2,
           label: "Nomor",
           value: "NO: 0001/BPS/1871/KPG/2025",
-          top: 140,
-          left: 335,
-          fontSize: 30,
+          top: 58,
+          left: 33,
+          fontSize: 15,
         },
         {
           id: 3,
           label: "Sub Judul",
           value: "Diberikan Kepada:",
-          top: 230,
-          left: 195,
-          fontSize: 20,
+          top: 100,
+          left: 28,
+          fontSize: 13,
         },
         {
           id: 4,
           label: "Nama Peserta",
           value: "Zainab Aqilah",
-          top: 270,
-          left: 310,
-          fontSize: 60,
+          top: 125,
+          left: 33,
+          fontSize: 28,
           fontFamily: "Great Vibes, cursive", // font dekoratif, bisa diganti
         },
         {
           id: 5,
           label: "deskripsi",
           value:
-            "Telah menyelesaikan Magang/KP/PKL di Badan Pusat Statistik\nKota Bandar Lampung 40 (Empat Puluh) Hari Kerja dari tanggal\n16 Juni hingga 01 Agustus 2025",
-          top: 370,
-          left: 450,
-          fontSize: 20,
+            "Telah menyelesaikan Magang/KP/PKL di Badan Pusat Statistik Kota Bandar Lampung 40 (Empat Puluh) Hari Kerja dari tanggal\n16 Juni hingga 01 Agustus 2025",
+          top: 172,
+          left: 28,
+          fontSize: 13,
+          maxWidth: 380,
         },
         {
           id: 6,
           label: "Tanggal",
           value: "Bandar Lampung, 05 Agustus 2025",
-          top: 500,
-          left: 273,
-          fontSize: 20,
+          top: 255,
+          left: 28,
+          fontSize: 13,
         },
         {
           id: 7,
           label: "Penandatangan",
-          value: "KEPALA BADAN PUSAT STATISTIK\nKOTA BANDAR LAMPUNG",
-          top: 550,
-          left: 320,
-          fontSize: 25,
+          value: "KEPALA BADAN PUSAT STATISTIK KOTA BANDAR LAMPUNG",
+          top: 290,
+          left: 28,
+          fontSize: 13,
+          maxWidth: 200,
         },
         {
           id: 8,
           label: "Tertanda",
           value: "Dr. Hady Suryono, M.Si",
-          top: 700,
-          left: 250,
-          fontSize: 25,
+          top: 388,
+          left: 28,
+          fontSize: 13,
+          fontWeight:"bold",
         }
       ],
-
-
     };
 
     setTemplates([...templates, newTemplate]);
@@ -276,13 +277,21 @@ export default function TemplatePage() {
             {/* Form element */}
             <div className="w-1/2">
               <h2 className="text-xl font-bold mb-4">EDIT ELEMENT</h2>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  console.log('Updated Elements:', selectedTemplate.elements);
-                  setShowEditElement(false);
-                }}
-              >
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    
+                    // Update data template yang diedit ke dalam array templates
+                    setTemplates((prevTemplates) =>
+                      prevTemplates.map((template) =>
+                        template.id === selectedTemplate.id ? selectedTemplate : template
+                      )
+                    );
+
+                    setShowEditElement(false);
+                  }}
+                >
+
                 {/* <div className="mb-3">
                   <label className="text-sm">Nama Element</label>
                   <input
