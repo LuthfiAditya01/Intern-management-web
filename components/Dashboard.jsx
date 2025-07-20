@@ -2,8 +2,7 @@
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./../app/firebase/config";
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { React, useEffect, useState } from "react";
 import axios from "axios";
 import SignOutButton from "./signOutButton";
 import { useRouter } from "next/navigation";
@@ -41,6 +40,8 @@ export default function Dashboard() {
             if (user) {
                 setUser(user);
                 const token = await user.getIdTokenResult();
+                // Matikan saat Production
+                console.log(token);
                 const admin = token.claims.role === "admin";
                 const pembimbing = token.claims.role === "pembimbing";
                 setIsAdmin(admin);
@@ -288,7 +289,7 @@ export default function Dashboard() {
                                         title="Pemantauan Daftar Hadir"
                                         description="Pantau Riwayat Daftar Hadir Peserta Magang"
                                         color="blue"
-                                        onClick={() => handleMenuClick("/kalender")}
+                                        onClick={() => handleMenuClick("/historiDaftarHadir")}
                                     />
 
                                     <MenuCard
@@ -427,9 +428,9 @@ export default function Dashboard() {
                             {
                                 userStatus!=="pending"&&(
                                     <div className="fixed bottom-5 right-5 hover:bottom-7 transition-all ease-out duration-200 z-50">
-                                        <Link href={"/absen"} className="bg-blue-500 focus:bg-blue-700 focus:translate-y-8 rounded-2xl hover:bg-blue-700 hover:px-6 hover:py-4 hover:rounded-xl text-white px-4 py-3 hover:shadow-lg font-medium transition-all ease-out duration-300"> 
+                                        <button onClick={() => handleMenuClick("/absen")} className="bg-blue-500 focus:bg-blue-700 focus:translate-y-8 rounded-2xl hover:bg-blue-700 hover:px-6 hover:py-4 hover:rounded-xl text-white px-4 py-3 hover:shadow-lg font-medium transition-all ease-out cursor-pointer duration-300"> 
                                             ✅ Isi Daftar Hadir
-                                        </Link>
+                                        </button>
                                     </div>
                                 )
                             }

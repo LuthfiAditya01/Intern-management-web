@@ -1,7 +1,9 @@
 "use client";
 import InputAbsen from "@/components/ui/inputabsen";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { auth } from "./../app/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import axios from "axios";
@@ -247,6 +249,7 @@ export default function Absen() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="p-6 max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
+        <Button varian="link" size={"default"} className={"mb-5 bg-blue-300 hover:bg-blue-800 hover:text-white duration-300 ease-out"} ><ArrowLeft /><Link href={"/dashboard"}> Kembali ke Dashboard </Link></Button>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Isi Daftar Hadir</h1>
           </div>

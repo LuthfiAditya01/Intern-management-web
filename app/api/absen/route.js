@@ -49,7 +49,7 @@ export async function POST(request) {
       {
         message: "Absensi berhasil disimpan",
         absensi,
-        redirectUrl: "/dashboard", // URL untuk redirect ke dashboard
+        redirectUrl: "/historiDaftarHadir", // URL untuk redirect ke dashboard
       },
       { status: 201 }
     );

@@ -1,20 +1,20 @@
-// "use client"
+"use client"
 import ProtectedRoute from "@/components/ProtectedRoutes";
-import InternDataManagement from "./../../../components/InternDataManagement";
+import InternDataManagement from "@/components/InternDataManagement";
+import axios from "axios";
 
 const getInternDataById = async (id) => {
     try {
         // const baseUrl = process.env.NEXT_PUBLIC_API_URL;
         // console.log(baseUrl)
-        const res = await fetch(`http://localhost:3000/api/intern/${id}`, {
-            cache: 'no-store',
+        const response = await axios.get(`http://localhost:3000/api/intern/${id}`, {
+            headers: {
+                'Cache-Control': 'no-store'
+            }
         });
+        console.log(response);
 
-        if (!res.ok) {
-            throw new Error("Failed to fetch information");
-        }
-
-        return res.json();
+        return response.data;
     } catch (error) {
         console.log(error);
         // Tambahkan return nilai default
@@ -38,11 +38,11 @@ export default async function EditData({ params }) {
         );
     }
     
-    const { nama, nim, prodi, kampus, tanggalMulai, tanggalSelesai, divisi, status } = data.intern;
+    const { nama, nim, prodi, kampus, tanggalMulai, tanggalSelesai, divisi, status, pembimbing } = data.intern;
     
     return (
         <ProtectedRoute>
-            <InternDataManagement id={id} nama={nama} nim={nim} prodi={prodi} kampus={kampus} tanggalMulai={tanggalMulai} tanggalSelesai={tanggalSelesai} divisi={divisi} status={status} />
+            <InternDataManagement id={id} nama={nama} nim={nim} prodi={prodi} kampus={kampus} tanggalMulai={tanggalMulai} tanggalSelesai={tanggalSelesai} divisi={divisi} status={status} pembimbing={pembimbing} />
         </ProtectedRoute>
     )
 }
