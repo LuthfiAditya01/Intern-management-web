@@ -15,13 +15,52 @@ export default function TemplatePage() {
     bgBelakang: null,
   });
 
-    const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: files ? files[0] : value,
-    }));
+  const handleSetDefault = (id) => {
+    setTemplates((prevTemplates) =>
+      prevTemplates.map((template) =>
+        template.id === id
+          ? { ...template, status: 'DEFAULT' }
+          : { ...template, status: 'NON' }
+      )
+    );
   };
+
+  const [editImageModal, setEditImageModal] = useState(false);
+  const [editImageTarget, setEditImageTarget] = useState(null);
+
+  const handleEditImage = (template) => {
+    setEditImageTarget(template);
+    setEditImageModal(true);
+  };
+
+  const handleUpdateImage = (e) => {
+    e.preventDefault();
+    const updatedImage = e.target.bgDepan.files[0];
+    if (updatedImage) {
+      const imageUrl = URL.createObjectURL(updatedImage);
+      setTemplates((prevTemplates) =>
+        prevTemplates.map((t) =>
+          t.id === editImageTarget.id ? { ...t, imageUrl } : t
+        )
+      );
+      setEditImageModal(false);
+    }
+  };
+
+  const handleDelete = (id) => {
+    const konfirmasi = window.confirm("Yakin ingin hapus template ini?");
+    if (konfirmasi) {
+      setTemplates((prevTemplates) => prevTemplates.filter((t) => t.id !== id));
+    }
+  };
+  
+  const handleChange = (e) => {
+  const { name, value, files } = e.target;
+  setFormData((prev) => ({
+    ...prev,
+    [name]: files ? files[0] : value,
+  }));
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -123,6 +162,8 @@ export default function TemplatePage() {
     setShowEditElement(true);
   };
 
+
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -162,7 +203,10 @@ export default function TemplatePage() {
                 <td className="px-4 py-2 font-bold text-green-600">{template.status}</td>
                 <td className="px-4 py-2">{template.nama}</td>
                 <td className="px-4 py-2 space-x-2">
-                  <button className="bg-purple-500 text-white px-2 py-1 rounded text-xs">
+                  <button 
+                    className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
+                    onClick={() => handleSetDefault(template.id)}
+                  >
                     ATUR DEFAULT
                   </button>
                   <button
@@ -171,10 +215,16 @@ export default function TemplatePage() {
                   >
                     ELEMENT
                   </button>
-                  <button className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                  <button 
+                    className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
+                    onClick={() => handleEditImage(template)}
+                  >
                     EDIT TEMPLATE
                   </button>
-                  <button className="bg-red-500 text-white px-2 py-1 rounded text-xs">
+                  <button 
+                    className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                    onClick={() => handleDelete(template.id)}
+                  >
                     DELETE
                   </button>
                 </td>

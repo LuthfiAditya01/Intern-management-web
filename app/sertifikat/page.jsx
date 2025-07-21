@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Papa from "papaparse";
+import { faL } from "@fortawesome/free-solid-svg-icons";
 
 const SertifikatPage = () => {
   const [filters, setFilters] = useState({
@@ -8,6 +9,7 @@ const SertifikatPage = () => {
     program: "",
     kompetensi: "",
     instansi: "",
+    search: "",
   });
 
   const [data, setData] = useState([]);
@@ -16,6 +18,26 @@ const SertifikatPage = () => {
   const [tanggalMulai, setTanggalMulai] = useState("");
   const [tanggalSelesai, setTanggalSelesai] = useState("");
   const [lamaMagang, setLamaMagang] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
+
+const filteredData = data.filter((item) => {
+  return (
+    (!filters.kelas || item.kelas?.toLowerCase() === filters.kelas.toLowerCase()) &&
+    (!filters.program || item.program?.toLowerCase() === filters.program.toLowerCase()) &&
+    (!filters.kompetensi || item.kompetensi?.toLowerCase() === filters.kompetensi.toLowerCase()) &&
+    (!filters.instansi || item.instansi?.toLowerCase() === filters.instansi.toLowerCase()) &&
+    (!filters.search ||
+      item.nama?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      item.nis?.toLowerCase().includes(filters.search.toLowerCase()))
+  );
+});
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+
 
   const hitungLamaMagang = (mulai, selesai) => {
     if (!mulai || !selesai) return;
@@ -98,17 +120,23 @@ const SertifikatPage = () => {
       skipEmptyLines: true,
       complete: (results) => {
         try {
-          const importedData = results.data.map((row, index) => ({
-            id: data.length + index + 1,
-            nis: row?.NIS || "",
-            nama: row?.Nama || "",
-            tempatLahir: row?.["Tempat Lahir"] || "",
-            tanggalLahir: row?.["Tanggal Lahir"] || "",
-            kelas: row?.Kelas || "",
-            program: row?.Program || "",
-            kompetensi: row?.Kompetensi || "",
-            sekolah: row?.Sekolah || "",
-            instansi: row?.Instansi || "",
+          const importedData = results.data
+            .filter(row => Object.values(row).some(val => val && val.trim() !== ""))
+            .map((row, index) => ({
+              id: data.length + index + 1,
+              nis: row?.["NIS/NPM"] || "",
+              nama: row?.["Nama"] || "",
+              tempatLahir: row?.["Tempat Lahir"] || "",
+              tanggalLahir: row?.["Tanggal Lahir"] || "",
+              kelas: row?.["Kelas/Semester"] || "",
+              program: row?.["Program Keahlian"] || "",
+              kompetensi: row?.["Kompetensi Keahlian"] || "",
+              sekolah: row?.["Sekolah/Perguruan Tinggi"] || "",
+              instansi: row["Nama Instansi"],
+              alamat: row["Alamat Instansi"],
+              tanggalMulai: row["Tanggal Mulai"],
+              tanggalSelesai: row["Tanggal Selesai"],
+              lamaMagang: row["Lama Magang"],
           }));
           setData([...data, ...importedData]);
         } catch (error) {
@@ -129,22 +157,70 @@ const SertifikatPage = () => {
         <h1 className="text-2xl font-bold">Cetak Sertifikat</h1>
         <div className="space-x-2">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow cursor-pointer"
             onClick={() => setShowAddForm(true)}
           >
             Add Data
           </button>
-          <label className="bg-gray-400 text-white px-4 py-2 rounded shadow cursor-pointer">
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="bg-gray-400 text-white px-4 py-2 rounded shadow"
+          >
             Import Data
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleImport}
-            />
-          </label>
+          </button>
         </div>
       </div>
+
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded shadow-lg p-6 w-full max-w-md relative">
+            <button
+              onClick={() => setShowImportModal(false)}
+              className="absolute top-2 right-3 text-gray-500 hover:text-black text-xl font-bold"
+            >
+              ×
+            </button>
+            <h2 className="text-xl font-semibold mb-4 text-center">
+              IMPORT DATA SERTIFIKAT
+            </h2>
+            <div className="text-center mb-4">
+              <a
+                href="/sertifikat/format-data-sertifikat.xlsx"
+                download  
+                className="text-blue-600 underline text-sm"
+              >
+                Download Format Upload
+              </a>
+            </div>
+            <div className="flex flex-col gap-3">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  handleImport(e);
+                  setShowImportModal(false);
+                }}
+                className="border p-2 rounded"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  className="bg-gray-500 text-white px-4 py-2 rounded"
+                  onClick={() => setShowImportModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                  onClick={() => setShowImportModal(false)}
+                >
+                  Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="bg-green-500 text-white p-4 rounded-t font-semibold">
         Data Sertifikat
@@ -168,10 +244,10 @@ const SertifikatPage = () => {
             <option value="">Kompetensi Keahlian</option>
             <option value="RPL">RPL</option>
           </select>
-          <select className="border p-2 rounded" value={filters.instansi}onChange={(e) => setFilters({ ...filters, instansi: e.target.value })}>
+          {/* <select className="border p-2 rounded" value={filters.instansi}onChange={(e) => setFilters({ ...filters, instansi: e.target.value })}>
             <option value="">Nama Instansi</option>
             <option value="BPS">Badan Pusat Statistik Kota Bandar Lampung</option>
-          </select>
+          </select> */}
         </div>
 
         {/* Tombol Aksi */}
@@ -217,6 +293,8 @@ const SertifikatPage = () => {
             type="text"
             placeholder="Search"
             className="border p-1 text-sm rounded"
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
         </div>
 
@@ -243,8 +321,8 @@ const SertifikatPage = () => {
             </tr>
             </thead>
             <tbody>
-            {data.map((item, index) => (
-                <tr key={item.id} className="border-t">
+            {filteredData.map((item, index) => (
+                <tr key={index} className="border-t">
                 <td className="p-2">
                     <input
                     type="checkbox"
