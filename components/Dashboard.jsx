@@ -30,7 +30,11 @@ export default function Dashboard() {
     const [userInternData, setUserInternData] = useState(null);
     const [pageLoading, setPageLoading] = useState(false);
     const [userGrade, setUserGrade] = useState("-");
-    const [userMentor, setUserMentor] = useState("-");
+    const [userMentor, setUserMentor] = useState('-')
+    const [mentor, setMentor] = useState([]);
+    const [currentMentorData, setCurrentMentorData] = useState(null);
+    const [menteeCount, setMenteeCount] = useState(0);
+
 
     const route = useRouter();
 
@@ -64,17 +68,53 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        if (user && interns.length > 0) {
+        async function fetchMentors() {
+            try {
+                const res = await axios.get("/api/mentor");
+                setMentor(res.data);
+            } catch (error) {
+                console.error("Failed to fetch mentors:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchMentors();
+    }, []);
+
+
+    useEffect(() => {
+        if (user && interns && interns.length > 0) {
             const me = interns.find((i) => i.userId === user.uid);
             if (me) {
                 setUserInternData(me);
                 setUserStatus(me.status ?? "pending");
                 setUserDivision(me.divisi ?? "-");
-                setUserMentor(me.pembimbing ?? "-")
+                setUserMentor(me.pembimbing?.nama ?? "-");
                 setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
             }
         }
     }, [user, interns]);
+
+    useEffect(() => {
+        if (user && mentor && mentor.length > 0) {
+            const me = mentor.find((m) => m.userId === user.uid);
+            if (me) {
+                setCurrentMentorData(me);
+            }
+        }
+    }, [user, mentor])
+
+    useEffect(() => {
+        if (isPembimbing && currentMentorData && interns.length > 0) {
+            const activeMentees = interns.filter(
+                (interns) =>
+                    interns.pembimbing?._id === currentMentorData._id &&
+                    interns.status === "aktif"
+            ).length;
+
+            setMenteeCount(activeMentees);
+        }
+    }, [isPembimbing, currentMentorData, interns]);
 
 
     useEffect(() => {
@@ -90,6 +130,7 @@ export default function Dashboard() {
         }
         fetchInterns();
     }, []);
+
 
     useEffect(() => {
         const fetchGrade = async () => {
@@ -144,7 +185,7 @@ export default function Dashboard() {
                     <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
                     <p className={`text-3xl capitalize font-bold text-${color}-600`}>{value}</p>
                 </div>
-                <div className={`text-4xl bg-${color}-50 p-3 rounded-full`}>
+                <div className={`select-none text-4xl bg-${color}-50 p-3 rounded-full`}>
                     {icon}
                 </div>
             </div>
@@ -157,7 +198,7 @@ export default function Dashboard() {
             className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl hover:bg-${color}-50 cursor-pointer transition-all duration-300 hover:-translate-y-1 group`}
         >
             <div className="text-center">
-                <div className={`text-5xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`select-none text-5xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     {icon}
                 </div>
                 <h3 className="font-semibold text-gray-800 mb-2">{title}</h3>
@@ -181,6 +222,15 @@ export default function Dashboard() {
         );
     }
 
+    const getStatusColor = (userStatus) => {
+        switch (userStatus?.toLowerCase()) {
+            case 'aktif': return 'text-green-500';
+            case 'pending': return 'text-yellow-500';
+            case 'selesai': return 'text-blue-500';
+            case 'dikeluarkan': return 'text-red-500';
+            default: return 'text-gray-500';
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -197,11 +247,14 @@ export default function Dashboard() {
                             {isAdmin && (
                                 <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-blue-500">ADMIN</span></h1>
                             )}
-                            {isPembimbing && (
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-blue-500">PEMBIMBING</span></h1>
+                            {currentMentorData && (
+                                <>
+                                    <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-blue-500">PEMBIMBING</span></h1>
+                                    <h1 className="text-3xl font-bold text-gray-800 mb-2"><span className="text-orange-500">{currentMentorData.nama}</span></h1>
+                                </>
                             )}
                             <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard <span className="text-blue-500">MAGNET</span></h1>
-                            {isAdmin ? (
+                            {isAdmin || isPembimbing ? (
                                 <p className="text-gray-600">Kelola data dan monitor aktivitas magang dengan mudah</p>
                             ) : (
                                 <p className="text-gray-600">Pantau Status Pengajuan Magang dan Progress Magang Kamu Di Sini</p>
@@ -222,32 +275,34 @@ export default function Dashboard() {
                 </div>
 
                 {loading ? (
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-12 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600 font-medium">Memuat data...</p>
+                    <div className="flex justify-center items-center min-h-screen">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
                     </div>
                 ) : (
                     isAdmin || isPembimbing ? (
                         <>
                             {/* Statistics Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 <StatCard
-                                    title="Anak Magang Aktif"
+                                    title="Peserta Magang Aktif"
                                     value={activeCount}
                                     icon="👥"
                                     color="green"
                                 />
+                                {isPembimbing && (
+                                    <StatCard
+                                        title="Jumlah Peserta Bimbingan Aktif"
+                                        value={menteeCount}
+                                        icon="🧑‍🏫"
+                                        color="red"
+                                    />
+                                )}
+
                                 <StatCard
                                     title="Total Kuota Harian"
                                     value={kuota}
                                     icon="📊"
                                     color="blue"
-                                />
-                                <StatCard
-                                    title="Tim Dengan Peserta Magang Terbanyak"
-                                    value={mostPopularDivisi || '-'}
-                                    icon="🏆"
-                                    color="yellow"
                                 />
                             </div>
 
@@ -267,14 +322,21 @@ export default function Dashboard() {
                                         onClick={() => handleMenuClick("/dataMagang")}
                                         icon="👥"
                                         title="Data Peserta Magang"
-                                        description="Kelola informasi peserta magang"
+                                        description="Monitor dan kelola informasi peserta magang"
                                         color="green"
+                                    />
+                                    <MenuCard
+                                        onClick={() => handleMenuClick("/dataMentor")}
+                                        icon="🧑‍🏫"
+                                        title="Data Pembimbing Magang"
+                                        description="Monitor dan kelola informasi pembimbing magang"
+                                        color="blue"
                                     />
                                     <MenuCard
                                         onClick={() => handleMenuClick("/divisi")}
                                         icon="🏢"
                                         title="Tim & Penempatan"
-                                        description="Atur tim dan penempatan"
+                                        description="Monitor dan atur tim dan penempatan"
                                         color="purple"
                                     />
                                     <MenuCard
@@ -324,7 +386,7 @@ export default function Dashboard() {
                                         <div className="text-2xl">✅</div>
                                         <div>
                                             <p className="font-medium text-gray-800">Status Aktif</p>
-                                            <p className="text-sm text-gray-600">{activeCount} dari {interns.length} anak magang</p>
+                                            <p className="text-sm text-gray-600">{activeCount} dari {interns.length} peserta magang</p>
                                         </div>
                                     </div>
                                 </div>
@@ -352,38 +414,51 @@ export default function Dashboard() {
                             )}
 
                             {/* Statistics Cards */}
-                            <div className="grid grid-cols-1 gap-6 mb-8">
-                                <StatCard
-                                    title="Status Magang Kamu"
-                                    value={userStatus}
-                                    icon="⌛"
-                                    color="green"
-                                />
-                                <StatCard
-                                    title="Tim Kamu Saat Ini"
-                                    value={userDivision}
-                                    icon="🏛️"
-                                    color="blue"
-                                />
-                                <StatCard
-                                    title="Pembimbing Kamu Saat Ini"
-                                    value={userMentor}
-                                    icon="👤"
-                                    color="blue"
-                                />
-                                <StatCard
-                                    title="Periode Magang Kamu"
-                                    value={userPeriod}
-                                    icon="🗓️"
-                                    color="yellow"
-                                />
-                                <StatCard
-                                    title="Nilai Magang Kamu"
-                                    value={userGrade === "-" ? "Belum ada nilai" : userGrade}
-                                    icon="⭐"
-                                    color="blue"
-                                />
-                            </div>
+                            {userInternData && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                    <StatCard
+                                        title="Status Magang Kamu"
+                                        value={
+                                            <span className={getStatusColor(userStatus)}>
+                                                {userStatus}
+                                            </span>
+                                        }
+                                        icon="⌛"
+                                    />
+
+                                    <StatCard
+                                        title="Tim Kamu Saat Ini"
+                                        value={userDivision}
+                                        icon="🏛️"
+                                        color="blue"
+                                    />
+                                    <StatCard
+                                        title="Pembimbing Kamu Saat Ini"
+                                        value={userMentor}
+                                        icon="👤"
+                                        color="blue"
+                                    />
+                                    <StatCard
+                                        title="Periode Magang Kamu"
+                                        value={userPeriod}
+                                        icon="🗓️"
+                                        color="blue"
+                                    />
+                                    {/* ini harus disinkronisasi dengan perhitungan kuota dan jumlah intern */}
+                                    <StatCard
+                                        title="Kuota magang saat periode magang kamu"
+                                        value='kuota tersedia'
+                                        icon="📊"
+                                        color="blue"
+                                    />
+                                    <StatCard
+                                        title="Nilai Magang Kamu"
+                                        value={userGrade === "-" ? "Belum ada nilai" : userGrade}
+                                        icon="⭐"
+                                        color="blue"
+                                    />
+                                </div>
+                            )}
 
                             {/* Menu Cards */}
                             {
@@ -408,14 +483,14 @@ export default function Dashboard() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/dashboard")}
-                                                icon="🗓️"
-                                                title="Jadwal Tersedia Kesempatan Magang"
-                                                description="Lihat ketersediaan jadwal magang"
+                                                icon="🗓📖"
+                                                title="Pengumpulan Laporan"
+                                                description="Submit Laporan Magang Kamu di sini"
                                                 color="blue"
                                             />
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/historiDaftarHadir")}
-                                                icon="🔄"
+                                                icon="📓🔄"
                                                 title="Histori Daftar Hadir"
                                                 description="Lihat histori daftar hadirmu!"
                                                 color="green"

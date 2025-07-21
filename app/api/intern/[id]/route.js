@@ -43,6 +43,6 @@ export async function PUT(request, { params }) {
 export async function GET(request, { params }) {
     const { id } = params;
     await connectMongoDB();
-    const intern = await Intern.findOne({ _id: id });
+    const intern = await Intern.findById(id).populate('pembimbing', 'nama');
     return NextResponse.json({ intern }, { status: 200 });
 }

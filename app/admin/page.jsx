@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, User, Save, Users, Crown, UserCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, User, Save, Users, Crown, UserCheck, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import NavbarGeneral from '@/components/NavbarGeneral';
-import ProtectedRoute from '@/components/ProtectedRoutes';
+import ProtectedRoutes from '@/components/ProtectedRoutes';
 import NotFound from '../notFound/page';
+import Modal from '@/components/Modal';
 
 export default function KelolaRolePage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -17,6 +18,11 @@ export default function KelolaRolePage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const router = useRouter();
+
+    const [deleteUserModal, setDeleteUserModal] = useState({
+        isOpen: false,
+        user: null,
+    });
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -38,6 +44,7 @@ export default function KelolaRolePage() {
     useEffect(() => {
         if (isAdmin && currentUser) {
             const fetchUsers = async () => {
+                setLoading(true);
                 try {
                     const idToken = await currentUser.getIdToken();
                     const response = await fetch('/api/users', {
@@ -57,12 +64,12 @@ export default function KelolaRolePage() {
         }
     }, [isAdmin, currentUser]);
 
-    
+
     const handleRoleChange = (uid, newRole) => {
         setUsers(users.map(u => u.uid === uid ? { ...u, role: newRole, hasChanged: true } : u));
     };
 
-    
+
     const handleSaveRole = async (targetUser) => {
         setSuccess('');
         setError('');
@@ -87,7 +94,52 @@ export default function KelolaRolePage() {
         }
     };
 
-    
+    const openDeleteModal = (user) => {
+        setDeleteUserModal({ isOpen: true, user });
+    };
+
+    const closeDeleteModal = () => {
+        setDeleteUserModal({ isOpen: false, user: null });
+    };
+
+    const handleDeleteUser = async () => {
+        const userToDelete = deleteUserModal.user;
+        if (!userToDelete) return;
+
+        if (userToDelete.uid === currentUser.uid) {
+            setError("Anda tidak dapat menghapus akun Anda sendiri.");
+            closeDeleteModal();
+            return;
+        }
+
+        setSuccess('');
+        setError('');
+
+        try {
+            const idToken = await currentUser.getIdToken();
+            const response = await fetch('/api/delete-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ uid: userToDelete.uid }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Gagal menghapus pengguna.");
+
+            setSuccess(`Pengguna ${userToDelete.email} berhasil dihapus secara permanen.`);
+            setUsers(users.filter(u => u.uid !== userToDelete.uid));
+
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            closeDeleteModal();
+        }
+    };
+
+
     const getRoleBadge = (role) => {
         switch (role) {
             case 'admin':
@@ -115,14 +167,24 @@ export default function KelolaRolePage() {
     }
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoutes>
             {isAdmin ? (
                 <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
                     <div className='p-6 max-w-7xl mx-auto'>
+                        <Modal
+                            isOpen={deleteUserModal.isOpen}
+                            onClose={closeDeleteModal}
+                            title="Konfirmasi Hapus Pengguna"
+                            message={`Apakah Anda yakin ingin menghapus pengguna ${deleteUserModal.user?.email} secara permanen? Tindakan ini tidak dapat diurungkan.`}
+                            type="confirmation"
+                            onConfirm={handleDeleteUser}
+                            confirmText="Ya, Hapus Permanen"
+                            cancelText="Batal"
+                        />
+
                         <NavbarGeneral title="Dashboard Pengelolaan Role" subTitle="Ubah role pengguna untuk memberikan hak akses yang sesuai." />
 
                         <div className="max-w-6xl mx-auto p-4 sm:p-6 pt-6 sm:pt-8">
-                            {/* Header Section */}
                             <div className="mb-6 sm:mb-8">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 sm:p-3 bg-indigo-600 rounded-xl text-white shadow-lg">
@@ -134,7 +196,6 @@ export default function KelolaRolePage() {
                                     </div>
                                 </div>
 
-                                {/* Stats Cards */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
                                     <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-200">
                                         <div className="flex items-center justify-between">
@@ -172,7 +233,6 @@ export default function KelolaRolePage() {
                                 </div>
                             </div>
 
-                            {/* Alert Messages */}
                             {error && (
                                 <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
                                     <AlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={20} />
@@ -193,7 +253,6 @@ export default function KelolaRolePage() {
                                 </div>
                             )}
 
-                            {/* Users List */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                                 <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
                                     <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -245,15 +304,24 @@ export default function KelolaRolePage() {
                                                             </select>
                                                         </div>
 
-                                                        {user.hasChanged && (
+                                                        <div className="flex items-center gap-2">
+                                                            {user.hasChanged && (
+                                                                <button
+                                                                    onClick={() => handleSaveRole(user)}
+                                                                    className="flex-grow bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 flex items-center justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm"
+                                                                >
+                                                                    <Save size={14} />
+                                                                    Simpan
+                                                                </button>
+                                                            )}
                                                             <button
-                                                                onClick={() => handleSaveRole(user)}
-                                                                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 flex items-center justify-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm"
+                                                                onClick={() => openDeleteModal(user)}
+                                                                className="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors w-full"
+                                                                title="Hapus Pengguna"
                                                             >
-                                                                <Save size={14} />
-                                                                Simpan Perubahan
+                                                                <Trash2 size={16} />
                                                             </button>
-                                                        )}
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -261,7 +329,7 @@ export default function KelolaRolePage() {
                                                 <div className="hidden sm:block">
                                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                                         <div className="flex items-start gap-4">
-                                                            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                                            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md flex-shrink-0">
                                                                 {user.email.charAt(0).toUpperCase()}
                                                             </div>
                                                             <div className="flex-1">
@@ -278,32 +346,33 @@ export default function KelolaRolePage() {
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex flex-col gap-2">
-                                                                <label className="text-sm font-medium text-gray-700">Role Pengguna</label>
-                                                                <select
-                                                                    value={user.role}
-                                                                    onChange={(e) => handleRoleChange(user.uid, e.target.value)}
-                                                                    className="border cursor-pointer border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 min-w-[140px]"
-                                                                >
-                                                                    <option value="user">👤 User</option>
-                                                                    <option value="pembimbing">🎓 Pembimbing</option>
-                                                                    <option value="admin">👑 Admin</option>
-                                                                </select>
-                                                            </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <select
+                                                                value={user.role}
+                                                                onChange={(e) => handleRoleChange(user.uid, e.target.value)}
+                                                                className="border cursor-pointer border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
+                                                            >
+                                                                <option value="user">👤 User</option>
+                                                                <option value="pembimbing">🎓 Pembimbing</option>
+                                                                <option value="admin">👑 Admin</option>
+                                                            </select>
 
                                                             {user.hasChanged && (
-                                                                <div className="flex flex-col gap-2">
-                                                                    <label className="text-sm font-medium text-transparent">Action</label>
-                                                                    <button
-                                                                        onClick={() => handleSaveRole(user)}
-                                                                        className="bg-gradient-to-r cursor-pointer from-green-500 to-green-600 text-white px-6 py-2.5 rounded-lg hover:from-green-600 hover:to-green-700 flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 font-medium"
-                                                                    >
-                                                                        <Save size={16} />
-                                                                        Simpan
-                                                                    </button>
-                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleSaveRole(user)}
+                                                                    className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 transition-colors"
+                                                                >
+                                                                    <Save size={16} /> Simpan
+                                                                </button>
                                                             )}
+
+                                                            <button
+                                                                onClick={() => openDeleteModal(user)}
+                                                                className="p-2 cursor-pointer bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                                title="Hapus Pengguna"
+                                                            >
+                                                                <Trash2 size={20} />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -311,21 +380,21 @@ export default function KelolaRolePage() {
                                         );
                                     })}
                                 </div>
-                            </div>
 
-                            {users.length === 0 && !loading && (
-                                <div className="text-center py-12">
-                                    <Users className="mx-auto text-gray-400 mb-4" size={48} />
-                                    <p className="text-gray-600 text-lg">Tidak ada pengguna yang ditemukan</p>
-                                    <p className="text-gray-500 text-sm mt-2">Pastikan koneksi database berjalan dengan baik</p>
-                                </div>
-                            )}
+                                {users.length === 0 && !loading && (
+                                    <div className="text-center py-12">
+                                        <Users className="mx-auto text-gray-400 mb-4" size={48} />
+                                        <p className="text-gray-600 text-lg">Tidak ada pengguna yang ditemukan</p>
+                                        <p className="text-gray-500 text-sm mt-2">Pastikan koneksi berjalan dengan baik</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : (
                 <NotFound />
             )}
-        </ProtectedRoute>
+        </ProtectedRoutes>
     );
 }

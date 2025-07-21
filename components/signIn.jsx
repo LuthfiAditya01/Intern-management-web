@@ -534,29 +534,39 @@ export default function Login() {
                         <p className="text-gray-600">
                             {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
                         </p>
-                        <button
-                            onClick={() => {
-                                setIsLogin(!isLogin);
-                                setFormulir({ email: '', password: '' });
-                                setForm({
-                                    nama: "",
-                                    nim: "",
-                                    nik: "",
-                                    prodi: "",
-                                    kampus: "",
-                                    tanggalMulai: "",
-                                    tanggalSelesai: "",
-                                    divisi: "-",
-                                    status: "pending",
-                                    pembimbing: "Belum Di Set",
-                                });
-                                setError("");
-                                setNikError("");
-                            }}
-                            className="mt-2 text-blue-600 font-semibold hover:text-blue-700 cursor-pointer"
-                        >
-                            {isLogin ? 'Daftar Sekarang' : 'Masuk'}
-                        </button>
+                        <div className='flex flex-col gap-2'>
+                            <button
+                                onClick={() => {
+                                    setIsLogin(!isLogin);
+                                    setFormulir({ email: '', password: '' });
+                                    setForm({
+                                        nama: "",
+                                        nim: "",
+                                        nik: "",
+                                        prodi: "",
+                                        kampus: "",
+                                        tanggalMulai: "",
+                                        tanggalSelesai: "",
+                                        divisi: "-",
+                                        status: "pending",
+                                        pembimbing: "Belum Di Set",
+                                    });
+                                    setError("");
+                                    setNikError("");
+                                }}
+                                className="mt-2 text-blue-600 font-semibold hover:text-blue-700 cursor-pointer"
+                            >
+                                {isLogin ? 'Daftar Sebagai Peserta' : 'Masuk'}
+                            </button>
+                            {isLogin && (
+                                <button
+                                    className="mt-2 text-blue-600 font-semibold hover:text-blue-700 cursor-pointer"
+                                    onClick={() => router.push('/sign-upMentor')}
+                                >
+                                    Daftar Sebagai Pembimbing
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <p className="text-center text-gray-600 text-sm mt-8">
