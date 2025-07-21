@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import DaftarHadir from "@/models/daftarHadirInfo";
 import fetch from "node-fetch";
+import Intern from "@/models/internInfo";
 
 export async function POST(request) {
   try {
@@ -78,9 +79,23 @@ export async function GET(request) {
     }
 
     // Ambil data absensi
-    const absensi = await DaftarHadir.find(query).sort({ absenDate: -1 });
+    const absensiData = await DaftarHadir.find(query).sort({ absenDate: -1 });
 
-    return NextResponse.json({ absensi }, { status: 200 });
+    // Ambil semua data absensi intern untuk dicocokkan dengan idUser
+    const internsData = await Intern.find({});
+    const internsMap= {};
+    internsData.forEach(intern => {
+      internsMap[intern.userId] = intern.nama
+    })
+
+    // Gabungkan data absensi dengan nama Intern
+    const absensiWithNames = absensiData.map(absen => {
+      const absenObj = absen.toObject();
+      absenObj.nama = internsMap[absen.idUser] || "Nama tidak Ditemukan";
+      return absenObj;
+    })
+
+    return NextResponse.json({ absensi: absensiWithNames }, { status: 200 });
   } catch (error) {
     console.error("Error mengambil data absensi:", error);
     return NextResponse.json({ error: "Terjadi kesalahan saat mengambil data absensi" }, { status: 500 });

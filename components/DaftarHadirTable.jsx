@@ -176,8 +176,8 @@ export default function DaftarHadirTable() {
         <table className="w-full bg-white border border-gray-200 rounded-lg shadow-md">
           <thead>
             <tr className="bg-gray-100">
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Nama</th>
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Tanggal</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Nama</th>
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Waktu Pengisian</th>
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Titik Latitude</th>
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Titik Longitude</th>
@@ -199,14 +199,14 @@ export default function DaftarHadirTable() {
                 <tr
                   key={index}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{"Ini adalah tempat untuk nama"}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${hours}:${minute}`}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.latCordinate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.longCordinate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.jarakDariPusat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk}</td>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}` || "Tanggal Tidak Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.nama || "Nama tidak tersedia "}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${hours}:${minute}` || "Waktu Tidak Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.latCordinate || "Kordinat Latitude Tidak Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.longCordinate || "Kordinat Longitude Tidak Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.jarakDariPusat || "Jarak dari Titik ke Pusat belum dihitung/Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "Keterangan Masuk tidak ada"}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "Deskripsi Kegiatan Tidak ditemukan"}</td>
                 </tr>
               );
             })}
