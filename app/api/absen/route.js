@@ -2,13 +2,17 @@ import connectMongoDB from "@/libs/mongodb";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import DaftarHadir from "@/models/daftarHadirInfo";
+import fetch from "node-fetch";
 
 export async function POST(request) {
   try {
     // Ambil data dari request
     const { userId, nama, longCordinate, latCordinate, dailyNote } = await request.json();
     let KeteranganAbsen = "";
-    const waktu = new Date();
+    const waktuResponse = await fetch('http://worldtimeapi.org/api/timezone/Asia/Jakarta');
+    const waktuData = new waktuResponse.json();
+    const waktu = new Date(waktuData.datetime);
+    console.log("Waktu berdasarkan WorldTime API Zona Jakarta adalah : ", waktu)
     const jam = waktu.getHours();
     const menit = waktu.getMinutes();
     if ((jam > 5 && jam < 7) || jam === 5 || (jam === 7 && menit <= 30)) {

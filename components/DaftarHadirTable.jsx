@@ -193,13 +193,14 @@ export default function DaftarHadirTable() {
               const month = absenDate.getMonth();
               const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
               const year = absenDate.getFullYear();
-              const hours = absenDate.getHours();
-              const minute = absenDate.getMinutes();
+              const hours = absenDate.getHours().toString().padStart(2, '0');
+              const minute = absenDate.getMinutes().toString().padStart(2, '0');
               return (
                 <tr
                   key={index}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                   <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{"Ini adalah tempat untuk nama"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${hours}:${minute}`}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.latCordinate}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.longCordinate}</td>

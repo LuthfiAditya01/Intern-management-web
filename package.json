@@ -26,6 +26,7 @@
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.1",
     "next": "15.3.4",
+    "node-fetch": "^3.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.0.0",
     "react-firebase-hooks": "^5.1.1",

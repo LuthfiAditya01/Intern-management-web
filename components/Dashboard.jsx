@@ -46,6 +46,7 @@ export default function Dashboard() {
                 const token = await user.getIdTokenResult();
                 // Matikan saat Production
                 console.log(token);
+                // Sampai Sini
                 const admin = token.claims.role === "admin";
                 const pembimbing = token.claims.role === "pembimbing";
                 setIsAdmin(admin);
