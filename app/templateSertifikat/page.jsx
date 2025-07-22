@@ -275,7 +275,7 @@ export default function TemplatePage() {
                 />
               </div>
               <div className="mb-3">
-                <label className="block mb-1 text-sm">Upload Background Depan</label>
+                <label className="block mb-1 text-sm">Upload Background</label>
                 <input
                   type="file"
                   name="bgDepan"
@@ -284,7 +284,7 @@ export default function TemplatePage() {
                   required
                 />
               </div>
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className="block mb-1 text-sm">Upload Background Belakang</label>
                 <input
                   type="file"
@@ -292,7 +292,7 @@ export default function TemplatePage() {
                   onChange={handleChange}
                   className="w-full"
                 />
-              </div>
+              </div> */}
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
