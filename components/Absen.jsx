@@ -165,13 +165,6 @@ export default function Absen() {
     setSuccess("");
     setApiError("");
 
-    // Validasi panjang dailyNote
-    if (formData.dailyNote.length < 50) {
-      setSubmitError("Catatan Kegiatan harus minimal 50 karakter");
-      setFormLoading(false);
-      return;
-    }
-
     try {
       // Persiapkan data untuk dikirim ke API
       const dataToSubmit = {

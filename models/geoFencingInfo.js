@@ -15,8 +15,8 @@ const geofenceLocationSchema = new Schema({
         required: true,
     },
     changeByUser: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        type: String,  // Menggunakan Firebase UID yang berupa string
+        required: false
     }
 }, {
     timestamps: true

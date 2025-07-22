@@ -1,9 +1,7 @@
-import pengaturanAbsenPage from "@/components/pengaturanAbsenPage"
+import PengaturanAbsenPage from "@/components/PengaturanAbsenPage"
 
 export default function pengaturanAbsen(){
     return(
-        <div>
-            <pengaturanAbsenPage />
-        </div>
+            <PengaturanAbsenPage />
     )
 }

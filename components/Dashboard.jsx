@@ -356,7 +356,7 @@ export default function Dashboard() {
                                     />
 
                                     <MenuCard
-                                        onClick={() => handleMenuClick("/dataMagang")}
+                                        onClick={() => handleMenuClick("/pengaturanAbsen")}
                                         icon="⚙️"
                                         title="Pengaturan Daftar Hadir"
                                         description="Atur batas jam masuk, pulang, batas jarak daftar hadir, dan titik lokasi pusat"
