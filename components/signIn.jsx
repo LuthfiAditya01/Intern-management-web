@@ -7,22 +7,19 @@ import {
     useCreateUserWithEmailAndPassword,
 } from 'react-firebase-hooks/auth';
 import {
-    GoogleAuthProvider,
     onAuthStateChanged,
-    signInWithPopup,
-    updateProfile,
     sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from './../app/firebase/config';
-import { Eye, EyeOff, Mail, Lock, User, Hash, GraduationCap, Building, Calendar, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Hash, GraduationCap, Building, Calendar } from 'lucide-react';
 import Modal from './Modal';
 
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
     const [showPwd, setShowPwd] = useState(false);
-    const [formulir, setFormulir] = useState({ email: '', password: '' });
-
     const [form, setForm] = useState({
+        email: "",
+        password: "",
         nama: "",
         nim: "",
         nik: "",
@@ -32,19 +29,21 @@ export default function Login() {
         tanggalSelesai: "",
         divisi: "-",
         status: "pending",
-        pembimbing: "Belum Di Set",
     });
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [nikError, setNikError] = useState("");
-
     const [confirmReset, setConfirmReset] = useState(false);
     const [notifSent, setNotifSent] = useState(false);
     const [alert, setAlert] = useState(false);
     const [sendingReset, setSendingReset] = useState(false);
-
     const router = useRouter();
+
+    const [signInWithEmailAndPassword, user, loading, signInErr] =
+        useSignInWithEmailAndPassword(auth);
+    const [createUserWithEmailAndPassword, newUser, creating, signUpErr] =
+        useCreateUserWithEmailAndPassword(auth);
 
     const checkNikExists = async (nik) => {
         try {
@@ -59,41 +58,18 @@ export default function Login() {
 
     const handleChange = async (e) => {
         const { name, value } = e.target;
+        setForm(prevForm => ({ ...prevForm, [name]: value }));
 
-        if (['name', 'email', 'password'].includes(name)) {
-            setFormulir({ ...formulir, [name]: value });
-        }
-
-        if (['nama', 'nim', 'nik', 'prodi', 'kampus', 'tanggalMulai', 'tanggalSelesai', 'pembimbing'].includes(name)) {
-            setForm({ ...form, [name]: value });
-
-            if (name === 'nik' && value.length >= 16) {
+        if (name === 'nik') {
+            setNikError("");
+            if (value.length >= 16) {
                 const exists = await checkNikExists(value);
                 if (exists) {
                     setNikError("NIK sudah terdaftar, silakan gunakan NIK lain.");
-                } else {
-                    setNikError("");
                 }
-            } else if (name === 'nik') {
-                setNikError("");
             }
         }
     };
-
-    const [signInWithEmailAndPassword, user, loading, signInErr] =
-        useSignInWithEmailAndPassword(auth);
-    const [createUserWithEmailAndPassword, newUser, creating, signUpErr] =
-        useCreateUserWithEmailAndPassword(auth);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                router.push('/dashboard');
-            }
-        });
-
-        return () => unsubscribe();
-    }, [router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -102,7 +78,7 @@ export default function Login() {
 
         try {
             if (isLogin) {
-                await signInWithEmailAndPassword(formulir.email, formulir.password);
+                await signInWithEmailAndPassword(form.email, form.password);
             } else {
                 const nikExists = await checkNikExists(form.nik);
                 if (nikExists) {
@@ -111,15 +87,15 @@ export default function Login() {
                     return;
                 }
 
-                const cred = await createUserWithEmailAndPassword(formulir.email, formulir.password);
+                const cred = await createUserWithEmailAndPassword(form.email, form.password);
 
                 if (cred?.user) {
                     const internData = {
                         ...form,
                         userId: cred.user.uid,
-                        email: formulir.email,
                         createdAt: new Date().toISOString(),
                     };
+                    delete internData.password;
 
                     const res = await fetch("/api/intern", {
                         method: "POST",
@@ -145,8 +121,18 @@ export default function Login() {
         }
     };
 
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                router.push('/dashboard');
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
+
+
     const handleForgotPassword = async () => {
-        if (!formulir.email) {
+        if (!form.email) {
             setAlert(true);
         } else {
             setConfirmReset(true);
@@ -154,7 +140,7 @@ export default function Login() {
     };
 
     const handleConfirmForgot = async () => {
-        if (!formulir.email) {
+        if (!form.email) {
             alert("Silakan masukkan email terlebih dahulu");
             return;
         }
@@ -162,13 +148,11 @@ export default function Login() {
         setSendingReset(true);
 
         try {
-            await sendPasswordResetEmail(auth, formulir.email);
+            await sendPasswordResetEmail(auth, form.email);
             setConfirmReset(false);
             setNotifSent(true);
-            console.log("Email reset password berhasil dikirim!");
         } catch (error) {
             console.error("Error sending password reset email:", error);
-
             if (error.code === "auth/user-not-found") {
                 alert("Email tidak terdaftar.");
             } else if (error.code === "auth/invalid-email") {
@@ -185,9 +169,7 @@ export default function Login() {
 
     function getFriendlyError(error) {
         if (!error) return null;
-
         const code = error.code || "";
-
         switch (code) {
             case "auth/invalid-email":
                 return "Format email tidak valid.";
@@ -206,17 +188,8 @@ export default function Login() {
         }
     }
 
-    const statusOptions = [
-        { value: "aktif", label: "Aktif", color: "text-green-600" },
-        { value: "selesai", label: "Selesai", color: "text-blue-600" },
-        { value: "dikeluarkan", label: "Dikeluarkan", color: "text-red-600" },
-        { value: "pending", label: "Pending", color: "text-yellow-600" },
-    ];
-
-
     return (
         <div className="min-h-screen bg-gray-50 flex flex-row items-center justify-center gap-3">
-            {/* Modals */}
             <Modal
                 isOpen={confirmReset}
                 onClose={() => setConfirmReset(false)}
@@ -227,7 +200,6 @@ export default function Login() {
                 confirmText="Ya, Kirim"
                 cancelText="Batal"
             />
-
             <Modal
                 isOpen={alert}
                 onClose={() => setAlert(false)}
@@ -235,17 +207,14 @@ export default function Login() {
                 message="Silahkan masukkan email terlebih dahulu"
                 type="notification"
             />
-
             <Modal
                 isOpen={notifSent}
                 onClose={() => setNotifSent(false)}
                 title="Email Terkirim"
-                message={`Link reset password telah dikirim ke ${formulir.email}. Silakan cek email Anda.`}
+                message={`Link reset password telah dikirim ke ${form.email}. Silakan cek email Anda.`}
                 type="notification"
             />
-
             <img src="assets/image/Banner1.png" alt="Banner" className='w-[55%] h-screen xl:block hidden object-cover' />
-
             <div className="w-full max-w-xl mx-3 my-5">
                 <div className="bg-white rounded-3xl shadow-xl p-8">
                     <div className="text-center mb-8">
@@ -269,14 +238,12 @@ export default function Login() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Authentication Fields */}
-
                         <Field
                             icon={<Mail className="h-5 w-5 text-gray-400" />}
                             type="email"
                             name="email"
                             placeholder="Email"
-                            value={formulir.email}
+                            value={form.email}
                             onChange={handleChange}
                             required
                         />
@@ -286,7 +253,7 @@ export default function Login() {
                             type={showPwd ? 'text' : 'password'}
                             name="password"
                             placeholder="Password"
-                            value={formulir.password}
+                            value={form.password}
                             onChange={handleChange}
                             required
                             append={
@@ -312,17 +279,13 @@ export default function Login() {
                             </div>
                         )}
 
-                        {/* Registration - Intern Data Fields */}
                         {!isLogin && (
                             <>
-                                {/* Personal Information Section */}
                                 <div className="border-t border-gray-200 pt-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                                         Data Pribadi
                                     </h3>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Nama Lengkap */}
                                         <div className="md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Nama Lengkap
@@ -340,8 +303,6 @@ export default function Login() {
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* NIM */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 NIM
@@ -359,8 +320,6 @@ export default function Login() {
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* NIK */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 NIK
@@ -374,16 +333,13 @@ export default function Login() {
                                                     value={form.nik}
                                                     onChange={handleChange}
                                                     required
-                                                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${nikError ? 'border-red-500' : 'border-gray-300'
-                                                        }`}
+                                                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${nikError ? 'border-red-500' : 'border-gray-300'}`}
                                                 />
                                             </div>
                                             {nikError && (
                                                 <p className="mt-1 text-sm text-red-600">{nikError}</p>
                                             )}
                                         </div>
-
-                                        {/* Program Studi */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Program Studi
@@ -401,8 +357,6 @@ export default function Login() {
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* Universitas */}
                                         <div className="md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Universitas/Kampus
@@ -422,16 +376,12 @@ export default function Login() {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Timeline Section */}
                                 <div className="border-t border-gray-200 pt-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                         <Calendar className="w-5 h-5 text-blue-600" />
                                         Periode Magang
                                     </h3>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Tanggal Mulai */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Tanggal Mulai
@@ -445,8 +395,6 @@ export default function Login() {
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                             />
                                         </div>
-
-                                        {/* Tanggal Selesai */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Tanggal Selesai
@@ -462,38 +410,9 @@ export default function Login() {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Mentor Section */}
-                                {/* <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                        <User className="w-5 h-5 text-blue-600" />
-                                        Pemilihan Pembimbing
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                *Pembimbing Akan Di-Set oleh Admin setelah anda mendaftar
-                                            </label>
-                                            <select
-                                                name="pembimbing"
-                                                value={form.pembimbing}
-                                                onChange={handleChange}
-                                                required
-                                                className="w-full cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                            >
-                                                {pembimbingOptions.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div> */}
                             </>
                         )}
 
-                        {/* Error Display */}
                         {(signInErr || signUpErr || error) && (
                             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                                 <div className="flex">
@@ -511,7 +430,6 @@ export default function Login() {
                             </div>
                         )}
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isLoading || loading || creating || nikError}
@@ -538,8 +456,9 @@ export default function Login() {
                             <button
                                 onClick={() => {
                                     setIsLogin(!isLogin);
-                                    setFormulir({ email: '', password: '' });
                                     setForm({
+                                        email: "",
+                                        password: "",
                                         nama: "",
                                         nim: "",
                                         nik: "",
@@ -549,7 +468,6 @@ export default function Login() {
                                         tanggalSelesai: "",
                                         divisi: "-",
                                         status: "pending",
-                                        pembimbing: "Belum Di Set",
                                     });
                                     setError("");
                                     setNikError("");

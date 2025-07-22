@@ -79,7 +79,6 @@ export default function Dashboard() {
         fetchMentors();
     }, []);
 
-
     useEffect(() => {
         if (user && interns && interns.length > 0) {
             const me = interns.find((i) => i.userId === user.uid);
@@ -128,7 +127,6 @@ export default function Dashboard() {
         }
         fetchInterns();
     }, []);
-
 
     useEffect(() => {
         const fetchGrade = async () => {
@@ -384,71 +382,71 @@ export default function Dashboard() {
 
                             {/* Statistics Cards */}
                             {userInternData && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                    <StatCard
-                                        title="Status Magang Kamu"
-                                        value={
-                                            <span className={getStatusColor(userStatus)}>
-                                                {userStatus}
-                                            </span>
-                                        }
-                                        icon="⌛"
-                                    />
+                                <>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                        <StatCard
+                                            title="Status Magang Kamu"
+                                            value={
+                                                <span className={getStatusColor(userStatus)}>
+                                                    {userStatus}
+                                                </span>
+                                            }
+                                            icon="⌛"
+                                        />
 
-                                    <StatCard
-                                        title="Tim Kamu Saat Ini"
-                                        value={userDivision}
-                                        icon="🏛️"
-                                        color="blue"
-                                    />
-                                    <StatCard
-                                        title="Pembimbing Kamu Saat Ini"
-                                        value={userMentor}
-                                        icon="👤"
-                                        color="blue"
-                                    />
-                                    <StatCard
-                                        title="Periode Magang Kamu"
-                                        value={userPeriod}
-                                        icon="🗓️"
-                                        color="blue"
-                                    />
-                                    {/* ini harus disinkronisasi dengan perhitungan kuota dan jumlah intern */}
-                                    <StatCard
-                                        title="Kuota magang saat periode magang kamu"
-                                        value='kuota tersedia'
-                                        icon="📊"
-                                        color="blue"
-                                    />
-                                    <StatCard
-                                        title="Nilai Magang Kamu"
-                                        value={userGrade === "-" ? "Belum ada nilai" : userGrade}
-                                        icon="⭐"
-                                        color="blue"
-                                    />
-                                </div>
+                                        <StatCard
+                                            title="Tim Kamu Saat Ini"
+                                            value={userDivision}
+                                            icon="🏛️"
+                                            color="blue"
+                                        />
+                                        <StatCard
+                                            title="Pembimbing Kamu Saat Ini"
+                                            value={userMentor}
+                                            icon="👤"
+                                            color="blue"
+                                        />
+                                        <StatCard
+                                            title="Periode Magang Kamu"
+                                            value={userPeriod}
+                                            icon="🗓️"
+                                            color="blue"
+                                        />
+                                        {/* ini harus disinkronisasi dengan perhitungan kuota dan jumlah intern */}
+                                        <StatCard
+                                            title="Kuota magang saat periode magang kamu"
+                                            value='kuota tersedia'
+                                            icon="📊"
+                                            color="blue"
+                                        />
+                                        <StatCard
+                                            title="Nilai Magang Kamu"
+                                            value={userGrade === "-" ? "Belum ada nilai" : userGrade}
+                                            icon="⭐"
+                                            color="blue"
+                                        />
+                                    </div>
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                            <MenuCard
+                                                onClick={() => handleMenuClick("/dashboard")}
+                                                icon="📖"
+                                                title="Pengumpulan Laporan"
+                                                description="Submit Laporan Magang Kamu di sini"
+                                                color="blue"
+                                            />
+                                            <MenuCard
+                                                onClick={() => handleMenuClick("/dataMagang")}
+                                                icon="📓"
+                                                title="Absensi"
+                                                description="Presensi untuk peserta magang"
+                                                color="green"
+                                            />
+                                        </div>
+                                    </div>
+                                </>
                             )}
-
-                            {/* Menu Cards */}
-                            <div className="mb-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/dashboard")}
-                                        icon="📖"
-                                        title="Pengumpulan Laporan"
-                                        description="Submit Laporan Magang Kamu di sini"
-                                        color="blue"
-                                    />
-                                    <MenuCard
-                                        onClick={() => handleMenuClick("/dataMagang")}
-                                        icon="📓"
-                                        title="Absensi"
-                                        description="Presensi untuk peserta magang"
-                                        color="green"
-                                    />
-                                </div>
-                            </div>
                         </>
                     )
                 )}
