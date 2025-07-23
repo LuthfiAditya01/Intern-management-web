@@ -1,5 +1,5 @@
-'use client';
-import React, { useState } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
 // import SertifikatPreview from "@/component   s/SertifikatPreview";
 import PreviewSertifikat from "../../components/PreviewSertifikat";
 
@@ -9,18 +9,56 @@ export default function TemplatePage() {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [formData, setFormData] = useState({
-    namaTemplate: '',
-    elemen: '',
+    namaTemplate: "",
+    elemen: "",
     bgDepan: null,
-    bgBelakang: null,
   });
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch("/api/template");
+        const data = await res.json();
+        setTemplates(data); // kamu butuh state ini
+      } catch (err) {
+        console.error("Gagal ambil template:", err);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
+  const handleSaveTemplate = async () => {
+    try {
+      const res = await fetch("/api/template", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nama: formData.namaTemplate,
+          imageUrl: "link/image/dummy.jpg", // misal dummy, atau biarkan kosong jika tidak digunakan
+          elements: [], // bisa sesuaikan
+        }),
+      });
+
+      if (!res.ok) throw new Error("Gagal menyimpan");
+
+      const newTemplate = await res.json();
+      setTemplates((prev) => [...prev, newTemplate]); // update langsung
+      alert("Template berhasil disimpan!");
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan template");
+    }
+  };
 
   const handleSetDefault = (id) => {
     setTemplates((prevTemplates) =>
       prevTemplates.map((template) =>
         template.id === id
-          ? { ...template, status: 'DEFAULT' }
-          : { ...template, status: 'NON' }
+          ? { ...template, status: "DEFAULT" }
+          : { ...template, status: "NON" }
       )
     );
   };
@@ -53,116 +91,140 @@ export default function TemplatePage() {
       setTemplates((prevTemplates) => prevTemplates.filter((t) => t.id !== id));
     }
   };
-  
-  const handleChange = (e) => {
-  const { name, value, files } = e.target;
-  setFormData((prev) => ({
-    ...prev,
-    [name]: files ? files[0] : value,
-  }));
-};
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (files && files.length > 0) {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const imageUrl = formData.bgDepan ? URL.createObjectURL(formData.bgDepan) : '';
+    try {
+      // 1. Upload gambar ke server lokal
+      const formImage = new FormData();
+      formImage.append("file", formData.bgDepan);
 
-    const newTemplate = {
-      id: templates.length + 1,
-      nama: formData.namaTemplate,
-      elemen: formData.elemen,
-      status: templates.length === 0 ? 'DEFAULT' : 'NON',
-      imageUrl,
-      elements: [
-        {
-          id: 1,
-          label: "Judul",
-          value: "Sertifikat",
-          top: 25,
-          left: 28,
-          fontSize: 25,
-          fontWeight: "bold",
-        },
-        {
-          id: 2,
-          label: "Nomor",
-          value: "NO: 0001/BPS/1871/KPG/2025",
-          top: 58,
-          left: 33,
-          fontSize: 15,
-        },
-        {
-          id: 3,
-          label: "Sub Judul",
-          value: "Diberikan Kepada:",
-          top: 100,
-          left: 28,
-          fontSize: 13,
-        },
-        {
-          id: 4,
-          label: "Nama Peserta",
-          value: "Zainab Aqilah",
-          top: 125,
-          left: 33,
-          fontSize: 28,
-          fontFamily: "Great Vibes, cursive", // font dekoratif, bisa diganti
-        },
-        {
-          id: 5,
-          label: "deskripsi",
-          value:
-            "Telah menyelesaikan Magang/KP/PKL di Badan Pusat Statistik Kota Bandar Lampung 40 (Empat Puluh) Hari Kerja dari tanggal\n16 Juni hingga 01 Agustus 2025",
-          top: 172,
-          left: 28,
-          fontSize: 13,
-          maxWidth: 380,
-        },
-        {
-          id: 6,
-          label: "Tanggal",
-          value: "Bandar Lampung, 05 Agustus 2025",
-          top: 255,
-          left: 28,
-          fontSize: 13,
-        },
-        {
-          id: 7,
-          label: "Penandatangan",
-          value: "KEPALA BADAN PUSAT STATISTIK KOTA BANDAR LAMPUNG",
-          top: 290,
-          left: 28,
-          fontSize: 13,
-          maxWidth: 200,
-        },
-        {
-          id: 8,
-          label: "Tertanda",
-          value: "Dr. Hady Suryono, M.Si",
-          top: 388,
-          left: 28,
-          fontSize: 13,
-          fontWeight:"bold",
-        }
-      ],
-    };
+      // Perbaiki path API upload
+      const uploadRes = await fetch("/api/uploads", {  // Ubah dari /api/upload menjadi /api/uploads
+        method: "POST",
+        body: formImage,
+      });
 
-    setTemplates([...templates, newTemplate]);
-    setFormData({
-      namaTemplate: '',
-      elemen: '',
-      bgDepan: null,
-      bgBelakang: null,
-    });
-    setShowModal(false);
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+
+      const uploadData = await uploadRes.json();
+      console.log('Upload response:', uploadData);
+
+      // 2. Simpan ke MongoDB
+      const templateRes = await fetch("/api/template", { // Perbaiki variable name dari res ke templateRes
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: formData.namaTemplate,
+          imageUrl: uploadData.url,
+          elements: [
+            {
+              id: 1,
+              label: "Judul",
+              value: "Sertifikat",
+              top: 25,
+              left: 28,
+              fontSize: 25,
+              fontWeight: "bold",
+            },
+            {
+              id: 2,
+              label: "Nomor",
+              value: "NO: 0001/BPS/1871/KPG/2025",
+              top: 58,
+              left: 33,
+              fontSize: 15,
+            },
+            {
+              id: 3,
+              label: "Sub Judul",
+              value: "Diberikan Kepada:",
+              top: 100,
+              left: 28,
+              fontSize: 13,
+            },
+            {
+              id: 4,
+              label: "Nama Peserta",
+              value: "Nama Peserta",
+              top: 125,
+              left: 33,
+              fontSize: 28,
+              fontFamily: "Great Vibes, cursive",
+            },
+            {
+              id: 5,
+              label: "Deskripsi",
+              value:
+                "Telah menyelesaikan Magang/KP/PKL di Badan Pusat Statistik Kota Bandar Lampung 40 (Empat Puluh) Hari Kerja dari tanggal\n16 Juni hingga 01 Agustus 2025",
+              top: 172,
+              left: 28,
+              fontSize: 13,
+              maxWidth: 380,
+            },
+            {
+              id: 6,
+              label: "Tanggal",
+              value: "Bandar Lampung, 05 Agustus 2025",
+              top: 255,
+              left: 28,
+              fontSize: 13,
+            },
+            {
+              id: 7,
+              label: "Penandatangan",
+              value: "KEPALA BADAN PUSAT STATISTIK KOTA BANDAR LAMPUNG",
+              top: 290,
+              left: 28,
+              fontSize: 13,
+              maxWidth: 200,
+            },
+            {
+              id: 8,
+              label: "Tertanda",
+              value: "Dr. Hady Suryono, M.Si",
+              top: 388,
+              left: 28,
+              fontSize: 13,
+              fontWeight: "bold",
+            },
+          ],
+        }),
+      });
+
+      if (!templateRes.ok) {
+        throw new Error('Failed to save template');
+      }
+
+      const newTemplate = await templateRes.json();
+      setTemplates(prev => [...prev, newTemplate]);
+      setShowModal(false);
+      setFormData({ namaTemplate: "", elemen: "", bgDepan: null });
+      alert("Template berhasil disimpan!");
+
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err.message || "Gagal menyimpan template");
+    }
   };
 
   const handleOpenEditElement = (template) => {
     setSelectedTemplate(template);
     setShowEditElement(true);
   };
-
-
 
   return (
     <div className="p-6">
@@ -176,7 +238,9 @@ export default function TemplatePage() {
         </button>
       </div>
 
-      <div className="bg-green-600 text-white px-4 py-2 rounded-t">Data Template</div>
+      <div className="bg-green-600 text-white px-4 py-2 rounded-t">
+        Data Template
+      </div>
 
       <div className="overflow-x-auto border">
         <table className="w-full table-auto text-sm">
@@ -195,15 +259,21 @@ export default function TemplatePage() {
                 <td className="px-4 py-2">{template.id}</td>
                 <td className="px-4 py-2">
                   {template.imageUrl ? (
-                    <img src={template.imageUrl} alt="Template" className="w-40 border" />
+                    <img
+                      src={template.imageUrl}
+                      alt="Template"
+                      className="w-40 border"
+                    />
                   ) : (
                     <span>-</span>
                   )}
                 </td>
-                <td className="px-4 py-2 font-bold text-green-600">{template.status}</td>
+                <td className="px-4 py-2 font-bold text-green-600">
+                  {template.status}
+                </td>
                 <td className="px-4 py-2">{template.nama}</td>
                 <td className="px-4 py-2 space-x-2">
-                  <button 
+                  <button
                     className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
                     onClick={() => handleSetDefault(template.id)}
                   >
@@ -215,13 +285,13 @@ export default function TemplatePage() {
                   >
                     ELEMENT
                   </button>
-                  <button 
+                  {/* <button
                     className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
                     onClick={() => handleEditImage(template)}
                   >
                     EDIT TEMPLATE
-                  </button>
-                  <button 
+                  </button> */}
+                  <button
                     className="bg-red-500 text-white px-2 py-1 rounded text-xs"
                     onClick={() => handleDelete(template.id)}
                   >
@@ -248,7 +318,9 @@ export default function TemplatePage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded-md w-full max-w-md shadow-lg">
-            <h2 className="text-xl font-bold mb-4">Tambah Template Sertifikat</h2>
+            <h2 className="text-xl font-bold mb-4">
+              Tambah Template Sertifikat
+            </h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="block mb-1 text-sm">Nama Template</label>
@@ -315,33 +387,32 @@ export default function TemplatePage() {
 
       {/* Modal Edit Element */}
       {showEditElement && selectedTemplate && (
-       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center overflow-auto p-3">
-       <div className="bg-white w-full max-w-[1400px] h-[90vh] p-6 rounded shadow-lg flex gap-3 overflow-auto">
-               
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center overflow-auto p-3">
+          <div className="bg-white w-full max-w-[1400px] h-[90vh] p-6 rounded shadow-lg flex gap-3 overflow-auto">
             {/* Preview kiri */}
             <div className="w-1/2 flex items-center justify-center">
               <PreviewSertifikat template={selectedTemplate} />
             </div>
 
-
             {/* Form element */}
             <div className="w-1/2">
               <h2 className="text-xl font-bold mb-4">EDIT ELEMENT</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    
-                    // Update data template yang diedit ke dalam array templates
-                    setTemplates((prevTemplates) =>
-                      prevTemplates.map((template) =>
-                        template.id === selectedTemplate.id ? selectedTemplate : template
-                      )
-                    );
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
 
-                    setShowEditElement(false);
-                  }}
-                >
+                  // Update data template yang diedit ke dalam array templates
+                  setTemplates((prevTemplates) =>
+                    prevTemplates.map((template) =>
+                      template.id === selectedTemplate.id
+                        ? selectedTemplate
+                        : template
+                    )
+                  );
 
+                  setShowEditElement(false);
+                }}
+              >
                 {/* <div className="mb-3">
                   <label className="text-sm">Nama Element</label>
                   <input
@@ -363,7 +434,10 @@ export default function TemplatePage() {
                       onChange={(e) => {
                         const updated = [...selectedTemplate.elements];
                         updated[index].value = e.target.value;
-                        setSelectedTemplate({ ...selectedTemplate, elements: updated });
+                        setSelectedTemplate({
+                          ...selectedTemplate,
+                          elements: updated,
+                        });
                       }}
                       className="w-full border px-3 py-2 rounded"
                     />

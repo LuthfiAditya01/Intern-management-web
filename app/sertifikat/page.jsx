@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
 import { faL } from "@fortawesome/free-solid-svg-icons";
+import PreviewSertifikat from "../../components/PreviewSertifikat";
 
 const SertifikatPage = () => {
   const [filters, setFilters] = useState({
@@ -24,6 +25,25 @@ const SertifikatPage = () => {
   const [editTanggalMulai, setEditTanggalMulai] = useState("");
   const [editTanggalSelesai, setEditTanggalSelesai] = useState("");
   const [editLamaMagang, setEditLamaMagang] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+
+useEffect(() => {
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/template');
+      const data = await res.json();
+      setTemplates(data);
+    } catch (err) {
+      console.error("Gagal fetch template:", err);
+    }
+  };
+
+  fetchTemplates();
+}, []);
+
+
 
   useEffect(() => {
   if (editData) {
@@ -152,6 +172,33 @@ const SertifikatPage = () => {
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+const handleCetakHal = (halKe, siswa) => {
+  const selectedTemplate = templates.find(
+    (t) => t.nama.toLowerCase() === `hal ${halKe}`.toLowerCase()
+  );
+
+  if (!selectedTemplate) {
+    alert(`Template Hal ${halKe} tidak ditemukan`);
+    return;
+  }
+
+  const filledElements = selectedTemplate.elements.map((el) =>
+    el.label === "Nama Peserta"
+      ? { ...el, value: siswa.nama }
+      : el
+  );
+
+  const finalTemplate = {
+    ...selectedTemplate,
+    elements: filledElements,
+  };
+
+  setPreviewData(finalTemplate);
+  setShowPreview(true);
+};
+
+
 
   const handleImport = (e) => {
     const file = e.target.files[0];
@@ -394,8 +441,19 @@ const SertifikatPage = () => {
                 
                  <td className="p-2">
                   <div className="flex gap-2 flex-wrap">
-                    <button className="bg-purple-600 text-white px-2 py-1 rounded text-sm">HAL 1</button>
-                    <button className="bg-gray-600 text-white px-2 py-1 rounded text-sm">HAL 2</button>
+                    <button
+                        onClick={() => handleCetakHal(1, item)}
+                        className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
+                      >
+                        HAL 1
+                      </button>
+                      <button
+                        onClick={() => handleCetakHal(2, item)}
+                        className="bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                      >
+                        HAL 2
+                      </button>
+
                     <button
                       className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
                       onClick={() => handleEditClick(item)}
@@ -417,6 +475,24 @@ const SertifikatPage = () => {
         </table>
         </div>
       </div>
+
+      {showPreview && previewData && (
+  <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+    <div className="bg-white p-4 rounded shadow-md max-w-[1000px] w-full">
+      <h2 className="text-xl font-semibold mb-4">Preview Sertifikat</h2>
+      <PreviewSertifikat template={previewData} />
+      <div className="text-right mt-4">
+        <button
+          className="px-4 py-2 bg-gray-500 text-white rounded"
+          onClick={() => setShowPreview(false)}
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Form Tambah Data Manual */}
       {showAddForm && (
@@ -833,6 +909,7 @@ const SertifikatPage = () => {
             </div>
           </div>     
         )}
+
 
     {showDeleteModal && (
       <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
