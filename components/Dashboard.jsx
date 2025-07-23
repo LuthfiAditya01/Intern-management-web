@@ -88,6 +88,7 @@ export default function Dashboard() {
             const me = interns.find((i) => i.userId === user.uid);
             if (me) {
                 setUserInternData(me);
+                console.log("Isi dari userInternData adalah : ", userInternData);
                 setUserStatus(me.status ?? "pending");
                 setUserDivision(me.divisi ?? "-");
                 setUserMentor(me.pembimbing?.nama ?? "-");

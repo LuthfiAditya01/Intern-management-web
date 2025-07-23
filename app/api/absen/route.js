@@ -10,22 +10,40 @@ export async function POST(request) {
     // Ambil data dari request
     const { userId, nama, longCordinate, latCordinate, dailyNote } = await request.json();
     let KeteranganAbsen = "";
-    const waktuResponse = await fetch('http://worldtimeapi.org/api/timezone/Asia/Jakarta');
-    const waktuData = new waktuResponse.json();
-    const waktu = new Date(waktuData.datetime);
-    console.log("Waktu berdasarkan WorldTime API Zona Jakarta adalah : ", waktu)
-    const jam = waktu.getHours();
-    const menit = waktu.getMinutes();
-    if ((jam > 5 && jam < 7) || jam === 5 || (jam === 7 && menit <= 30)) {
+    let jam, menit;
+
+    try {
+      const waktuResponse = await fetch("http://worldtimeapi.org/api/timezone/Asia/Jakarta");
+      console.log("Fetch waktu dari API WorldTimeAPI berhasil");
+      const waktuData = await waktuResponse.json();
+      const waktu = new Date(waktuData.datetime);
+      console.log("Waktu berdasarkan WorldTime API Zona Jakarta adalah : ", waktu);
+      jam = waktu.getHours();
+      menit = waktu.getMinutes();
+      console.log(`Waktu saat ini: ${jam}:${menit}`);
+    } catch (error) {
+      console.log("Gagal mengambil waktu dari API, menggunakan waktu server lokal");
+      const waktuLokal = new Date();
+      jam = waktuLokal.getHours();
+      menit = waktuLokal.getMinutes();
+      console.log(`Menggunakan waktu lokal: ${jam}:${menit}`);
+    }
+
+    // Validasi waktu dan set keterangan absen
+    if ((jam >= 5 && jam < 7) || (jam === 7 && menit <= 30)) {
       KeteranganAbsen = "Datang Tepat Waktu";
     } else if ((jam === 7 && menit > 30) || (jam > 7 && jam < 12)) {
       KeteranganAbsen = "Datang Terlambat";
     } else if (jam >= 12 && jam < 16) {
       KeteranganAbsen = "Pulang Cepat";
-    } else if (jam >= 16 && jam <= 23) {
+    } else if(jam === 16) {
+      KeteranganAbsen = "Pulang Tepat Waktu"
+    } else if (jam > 16 && jam < 23) {
       KeteranganAbsen = "Pulang Lembur";
     } else {
-      return NextResponse.json({ error: "Anda mengisi daftar hadir di luar jam yang ditentukan" }, { status: 400 });
+      return NextResponse.json({ 
+        error: "Anda mengisi daftar hadir di luar jam yang ditentukan (05:00-07:30 atau 16:00-23:00)" 
+      }, { status: 400 });
     }
 
     // Connect ke MongoDB
@@ -38,8 +56,8 @@ export async function POST(request) {
 
     // Buat objek absensi baru
     const absensi = new DaftarHadir({
-      idUser: userId, // Menggunakan userId langsung sebagai string
-      absenDate: new Date(), // Tanggal saat ini
+      idUser: userId,
+      absenDate: new Date(),
       longCordinate: parseFloat(longCordinate),
       latCordinate: parseFloat(latCordinate),
       messageText: dailyNote,
@@ -49,18 +67,17 @@ export async function POST(request) {
     // Simpan ke database
     await absensi.save();
 
-    // Mengembalikan respons dengan status 201 (Created) dan URL untuk redirect
-    return NextResponse.json(
-      {
-        message: "Absensi berhasil disimpan",
-        absensi,
-        redirectUrl: "/historiDaftarHadir", // URL untuk redirect ke dashboard
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      message: "Absensi berhasil disimpan",
+      absensi,
+      redirectUrl: "/historiDaftarHadir",
+    }, { status: 201 });
+
   } catch (error) {
     console.error("Error menyimpan absensi:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan saat menyimpan absensi" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Terjadi kesalahan saat menyimpan absensi" 
+    }, { status: 500 });
   }
 }
 
@@ -83,17 +100,17 @@ export async function GET(request) {
 
     // Ambil semua data absensi intern untuk dicocokkan dengan idUser
     const internsData = await Intern.find({});
-    const internsMap= {};
-    internsData.forEach(intern => {
-      internsMap[intern.userId] = intern.nama
-    })
+    const internsMap = {};
+    internsData.forEach((intern) => {
+      internsMap[intern.userId] = intern.nama;
+    });
 
     // Gabungkan data absensi dengan nama Intern
-    const absensiWithNames = absensiData.map(absen => {
+    const absensiWithNames = absensiData.map((absen) => {
       const absenObj = absen.toObject();
       absenObj.nama = internsMap[absen.idUser] || "Nama tidak Ditemukan";
       return absenObj;
-    })
+    });
 
     return NextResponse.json({ absensi: absensiWithNames }, { status: 200 });
   } catch (error) {

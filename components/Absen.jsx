@@ -18,7 +18,7 @@ const MINIMUM_ACCURACY = 50; // 50 meter
 
 export default function Absen() {
   // Semua state diletakkan di bagian atas komponen
-  const [error, setError] = useState(null);
+  const [timeError, setTimeError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState("");
@@ -39,6 +39,7 @@ export default function Absen() {
   const [formLoading, setFormLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [apiError, setApiError] = useState("");
+  
 
   // Handler untuk meminta lokasi - Harus dipicu oleh interaksi pengguna
   const requestLocation = () => {
@@ -111,6 +112,20 @@ export default function Absen() {
     }));
   };
 
+  // menentukan jam absen
+  useEffect(() => {
+    const waktuLokal = new Date();
+    const jam = waktuLokal.getHours();
+    
+    if(jam >= 5 && jam < 23) {
+      console.log(`User mengisi di waktu yang diperbolehkan, yaitu pada jam ${jam}`);
+      setTimeError(false);
+    } else {
+      console.log(`User mengisi di waktu yang tidak diperbolehkan, yaitu pada jam ${jam}`);
+      setTimeError(true);
+    }
+  }, [])
+
   // Mengambil data user dari Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -164,9 +179,9 @@ export default function Absen() {
     setSubmitError("");
     setSuccess("");
     setApiError("");
+    setTimeError(false); // Reset time error
 
     try {
-      // Persiapkan data untuk dikirim ke API
       const dataToSubmit = {
         userId: user?.uid,
         nama: formData.nama,
@@ -177,7 +192,6 @@ export default function Absen() {
 
       console.log("Data yang akan dikirim:", dataToSubmit);
 
-      // Kirim data ke API absen
       const response = await fetch("/api/absen", {
         method: "POST",
         headers: {
@@ -186,33 +200,33 @@ export default function Absen() {
         body: JSON.stringify(dataToSubmit),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server response:", errorText);
-        throw new Error("Terjadi kesalahan saat menyimpan absensi");
-      }
-
       const result = await response.json();
 
+      if (!response.ok) {
+        // Cek pesan error dari server
+        if (result.error && result.error.includes("di luar jam")) {
+          setTimeError(true);
+          return; // Hentikan eksekusi
+        }
+        throw new Error(result.error || "Terjadi kesalahan saat menyimpan absensi");
+      }
+
       setSuccess("Absensi berhasil disimpan!");
-      // Reset form data untuk catatan kegiatan
       setFormData((prev) => ({
         ...prev,
         dailyNote: "",
       }));
 
-      // Redirect ke dashboard setelah 1.5 detik
       setTimeout(() => {
         if (result.redirectUrl) {
           route.push(result.redirectUrl);
         }
       }, 1500);
     } catch (err) {
-      setErrorMessage(err.message);
-      if (errorMessage.includes("di luar jam")) {
-        setError("400");
+      console.error("Error saat submit absensi:", err);
+      if (err.message.includes("di luar jam")) {
+        setTimeError(true);
       } else {
-        console.error("Error saat submit absensi:", err);
         setSubmitError(err.message || "Terjadi kesalahan saat mengirim data");
       }
     } finally {
@@ -243,11 +257,38 @@ export default function Absen() {
         </div>
       </div>
     );
-  } else if (Error === "400") {
+  } else if (timeError) {
     return (
-      <div className="error-message">
-        ⚠️
-        <p>Silakan absen pada jam yang telah ditentukan</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex justify-center items-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+          <div className="text-6xl mb-4"><img
+            src="/assets/image/forbidden.png"
+            alt="error icon"
+            className="h-20 mx-auto mb-4 motion-safe:animate-pulse hover:animate-none"
+          /></div>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Waktu Absen Tidak Sesuai
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Silakan absen pada jam yang telah ditentukan:
+            <br />
+            <span className="font-semibold">
+              Pagi: 05:00 - 07:30
+              <br />
+              Sore: 16:00 - 23:00
+            </span>
+          </p>
+          <Button
+            onClick={() => {
+              setTimeError(false);
+              setLoading(true);
+              route.push('/dashboard');
+            }}
+            className="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-300"
+          >
+            Kembali ke Dashboard
+          </Button>
+        </div>
       </div>
     );
   } else {

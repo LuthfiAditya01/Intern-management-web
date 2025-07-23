@@ -5,6 +5,7 @@ import { auth } from "./../app/firebase/config";
 import React, { useState } from "react";
 import { useEffect } from "react";
 import axios from "axios";
+import { getPreciseDistance } from "geolib";
 
 export default function DaftarHadirTable() {
   const [data, setData] = useState({ absensi: [] });
@@ -13,6 +14,25 @@ export default function DaftarHadirTable() {
   const [role, setRole] = useState(null);
   const [userId, setUserId] = useState(null);
   const [nullLength, setNullLength] = useState(false);
+  const [latCenter, setLatCenter] = useState(null);
+  const [longCenter, setLongCenter] = useState(null);
+
+  // Handler untuk mengambil lokasi pusat yang ditentukan admin
+  useEffect(() => {
+    const loadCurrentSettings = async () => {
+      try {
+        const response = await axios.get("/api/geofencing");
+        if (response.data) {
+          setLatCenter(response.data.latitude);
+          setLongCenter(response.data.longitude);
+        }
+      } catch (error) {
+        console.error("Error loading current settings:", error);
+      }
+    };
+
+    loadCurrentSettings();
+  }, []);
   // const [daftarHadir, setDaftarHadir] = useState(null);
   // setLoading(true);
   // useEffect(() => {
@@ -193,8 +213,25 @@ export default function DaftarHadirTable() {
               const month = absenDate.getMonth();
               const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
               const year = absenDate.getFullYear();
-              const hours = absenDate.getHours().toString().padStart(2, '0');
-              const minute = absenDate.getMinutes().toString().padStart(2, '0');
+              const hours = absenDate.getHours().toString().padStart(2, "0");
+              const minute = absenDate.getMinutes().toString().padStart(2, "0");
+              let distance = "Tidak tersedia";
+              if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
+                const userLoc = {
+                  latitude: parseFloat(item.latCordinate),
+                  longitude: parseFloat(item.longCordinate),
+                };
+                const centerLoc = {
+                  latitude: parseFloat(latCenter),
+                  longitude: parseFloat(longCenter),
+                };
+                try {
+                  distance = `${getPreciseDistance(userLoc, centerLoc)} meter`;
+                } catch (error) {
+                  console.error("Error calculating distance:", error);
+                  distance = "Error kalkulasi";
+                }
+              }
               return (
                 <tr
                   key={index}
@@ -204,7 +241,7 @@ export default function DaftarHadirTable() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${hours}:${minute}` || "Waktu Tidak Tersedia"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.latCordinate || "Kordinat Latitude Tidak Tersedia"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.longCordinate || "Kordinat Longitude Tidak Tersedia"}</td>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.jarakDariPusat || "Jarak dari Titik ke Pusat belum dihitung/Tersedia"}</td>
+                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${distance} meter` || "Jarak dari Titik ke Pusat Tidak Tersedia"}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "Keterangan Masuk tidak ada"}</td>
                   <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "Deskripsi Kegiatan Tidak ditemukan"}</td>
                 </tr>

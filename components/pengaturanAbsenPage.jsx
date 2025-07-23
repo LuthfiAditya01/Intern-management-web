@@ -6,6 +6,19 @@ import { useRouter } from "next/navigation";
 import InputAbsen from "@/components/ui/inputabsen";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/app/firebase/config";
+import MapPicker from "./ui/MapPicker";
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Import marker icon locally
+const markerIcon = L.icon({
+  iconUrl: "/assets/image/marker-icon.png", // Simpan di public folder
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 export default function PengaturanAbsenPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,25 +26,31 @@ export default function PengaturanAbsenPage() {
   const [formData, setFormData] = useState({
     centerLongitude: "",
     centerLatitude: "",
-    radius: ""
+    radius: "",
   });
   const [success, setSuccess] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [user, setUser] = useState(null);
   const [lastUpdatedBy, setLastUpdatedBy] = useState(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [location, setLocation] = useState({ latitude: "", longitude: "" });
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        console.log(user);
+        const token = user.getIdTokenResult;
         setUser(user);
         // Load existing geofencing settings
-        loadCurrentSettings();
       }
     });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    loadCurrentSettings();
   }, []);
 
   const loadCurrentSettings = async () => {
@@ -42,9 +61,14 @@ export default function PengaturanAbsenPage() {
         setFormData({
           centerLongitude: data.longitude || "",
           centerLatitude: data.latitude || "",
-          radius: data.radius || ""
+          radius: data.radius || "",
         });
-        
+
+        setLocation({
+          latitude: parseFloat(data.latitude) || "",
+          longitude: parseFloat(data.longitude) || "",
+        });
+
         // Set informasi user yang terakhir mengubah pengaturan
         setLastUpdatedBy(data.changeByUser);
         setLastUpdatedAt(data.updatedAt);
@@ -56,10 +80,17 @@ export default function PengaturanAbsenPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+
+    if (name === "centerLatitude" || name === "centerLongitude") {
+      setLocation((prev) => ({
+        ...prev,
+        [name === "centerLatitude" ? "latitude" : "longitude"]: value,
+      }));
+    }
   };
 
   const handleMenuClick = (href) => {
@@ -92,7 +123,7 @@ export default function PengaturanAbsenPage() {
     // Validasi format koordinat
     const longitude = parseFloat(formData.centerLongitude);
     const latitude = parseFloat(formData.centerLatitude);
-    
+
     if (isNaN(longitude) || isNaN(latitude)) {
       setSubmitError("Format koordinat tidak valid");
       setFormLoading(false);
@@ -102,8 +133,8 @@ export default function PengaturanAbsenPage() {
     try {
       // Persiapkan data untuk dikirim ke API pengaturan geofencing
       const dataToSubmit = {
-        centerLongitude: longitude,
-        centerLatitude: latitude,
+        centerLongitude: location.longitude,
+        centerLatitude: location.latitude,
         radius: formData.radius ? parseFloat(formData.radius) : 100, // default 100 meter
         changeByUser: user?.uid, // ID user yang mengubah pengaturan
       };
@@ -112,7 +143,7 @@ export default function PengaturanAbsenPage() {
 
       // Kirim data ke API pengaturan geofencing
       const response = await fetch("/api/geofencing", {
-        method: "POST",
+        method: "PUT", // Mengubah dari POST menjadi PUT untuk operasi update
         headers: {
           "Content-Type": "application/json",
         },
@@ -128,13 +159,13 @@ export default function PengaturanAbsenPage() {
       const result = await response.json();
 
       setSuccess("Pengaturan koordinat berhasil diperbarui!");
-      
+
       // Update informasi pengaturan terakhir
       if (result.data) {
         setLastUpdatedBy(result.data.changeByUser);
         setLastUpdatedAt(result.data.updatedAt);
       }
-      
+
       // Redirect ke dashboard setelah 1.5 detik
       setTimeout(() => {
         router.push("/dashboard");
@@ -177,7 +208,7 @@ export default function PengaturanAbsenPage() {
               <p className="text-green-700 font-medium">{success}</p>
             </div>
           )}
-          
+
           {submitError && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 font-medium">{submitError}</p>
@@ -192,12 +223,30 @@ export default function PengaturanAbsenPage() {
                 <span className="font-medium">Diubah oleh:</span> {lastUpdatedBy}
               </p>
               <p className="text-sm text-blue-700">
-                <span className="font-medium">Waktu:</span> {new Date(lastUpdatedAt).toLocaleString('id-ID')}
+                <span className="font-medium">Waktu:</span> {new Date(lastUpdatedAt).toLocaleString("id-ID")}
               </p>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <MapPicker
+              // onLocationPick={(coords) => setLocation(coords)}
+              // initialLocation={location}
+              // radius={parseFloat(formData.radius) || 100}
+              onLocationPick={(coords) => {
+                // Update location state
+                setLocation(coords);
+
+                // Also update form data
+                setFormData((prev) => ({
+                  ...prev,
+                  centerLatitude: coords.latitude.toString(),
+                  centerLongitude: coords.longitude.toString(),
+                }));
+              }}
+              initialLocation={location}
+              radius={parseFloat(formData.radius) || 100}
+            />
             <form
               onSubmit={handleSubmit}
               className="w-full">
