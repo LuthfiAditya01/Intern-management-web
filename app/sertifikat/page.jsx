@@ -34,32 +34,29 @@ useEffect(() => {
     try {
       const res = await fetch('/api/template');
       const data = await res.json();
+      console.log("✅ Templates berhasil dimuat:", data); // 👈 tambahkan ini
       setTemplates(data);
     } catch (err) {
-      console.error("Gagal fetch template:", err);
+      console.error("❌ Gagal fetch template:", err);
     }
   };
 
   fetchTemplates();
 }, []);
 
-
-
   useEffect(() => {
-  if (editData) {
-    setEditTanggalMulai(editData.tanggalMulai || "");
-    setEditTanggalSelesai(editData.tanggalSelesai || "");
-  }
-}, [editData]);
-
-  useEffect(() => {
-    if (editTanggalMulai && editTanggalSelesai) {
-      const start = new Date(editTanggalMulai);
-      const end = new Date(editTanggalSelesai);
-      const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)); // selisih hari
-      setEditLamaMagang(`${diff} hari`);
+    if (editData) {
+      setEditTanggalMulai(editData.tanggalMulai || "");
+      setEditTanggalSelesai(editData.tanggalSelesai || "");
+      hitungEditLamaMagang(editData.tanggalMulai, editData.tanggalSelesai);
     }
-  }, [editTanggalMulai, editTanggalSelesai]);
+  }, [editData]);
+
+useEffect(() => {
+  if (editTanggalMulai && editTanggalSelesai) {
+    hitungEditLamaMagang(editTanggalMulai, editTanggalSelesai);
+  }
+}, [editTanggalMulai, editTanggalSelesai]);
 
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -116,6 +113,30 @@ useEffect(() => {
 
     setLamaMagang(lama.trim());
   };
+  
+function hitungEditLamaMagang(tglMulai, tglSelesai) {
+  if (!tglMulai || !tglSelesai) return;
+
+  const mulai = new Date(tglMulai);
+  const selesai = new Date(tglSelesai);
+  const selisihHari = Math.ceil((selesai - mulai) / (1000 * 60 * 60 * 24));
+
+  if (selisihHari < 0) {
+    setEditLamaMagang("Tanggal tidak valid");
+    return;
+  }
+
+  // Menggunakan logika yang sama dengan form tambah data
+  const bulan = Math.floor(selisihHari / 30);
+  const hari = selisihHari % 30;
+
+  let lama = "";
+  if (bulan > 0) lama += `${bulan} bulan `;
+  if (hari > 0) lama += `${hari} hari`;
+
+  setEditLamaMagang(lama.trim());
+}
+
 
 
 
@@ -173,32 +194,74 @@ useEffect(() => {
     window.URL.revokeObjectURL(url);
   };
 
-const handleCetakHal = (halKe, siswa) => {
-  const selectedTemplate = templates.find(
-    (t) => t.nama.toLowerCase() === `hal ${halKe}`.toLowerCase()
-  );
+const handleCetakMagang = async (item) => {
+  try {
+    const res = await fetch('/api/template');
+    const templates = await res.json();
+    
+    const selectedTemplate = templates.find(
+      t => t.nama === "MAGANG/KP/PKL" && t.status === "DEFAULT"
+    );
 
-  if (!selectedTemplate) {
-    alert(`Template Hal ${halKe} tidak ditemukan`);
-    return;
+    if (!selectedTemplate) {
+      console.error('Available templates:', templates);
+      alert('Template MAGANG/KP/PKL tidak ditemukan');
+      return;
+    }
+
+    // Format tanggal ke format Indonesia
+    const formatTanggal = (dateStr) => {
+      if (!dateStr) return "";
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          throw new Error('Invalid date');
+        }
+        return date.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      } catch (error) {
+        console.error('Error formatting date:', dateStr, error);
+        return dateStr; // Return original string if parsing fails
+      }
+    };
+
+    // Log data untuk debugging
+    console.log('Tanggal Mulai:', item.tanggalMulai);
+    console.log('Tanggal Selesai:', item.tanggalSelesai);
+    
+    // Isi template dengan data siswa
+    const filledTemplate = {
+      ...selectedTemplate,
+      elements: selectedTemplate.elements.map(el => {
+        switch(el.label) {
+          case "Nama Peserta":
+            return { ...el, value: item.nama };
+          case "Deskripsi":
+            return { 
+              ...el, 
+              value: `atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode ${formatTanggal(item.tanggalMulai)} sampai ${formatTanggal(item.tanggalSelesai)}`
+            };
+          case "Tanggal":
+            return { 
+              ...el, 
+              value: `Bandar Lampung, ${formatTanggal(new Date())}` 
+            };
+          default:
+            return el;
+        }
+      })
+    };
+
+    setPreviewData(filledTemplate);
+    setShowPreview(true);
+  } catch (error) {
+    console.error('Error getting template:', error);
+    alert('Gagal mengambil template');
   }
-
-  const filledElements = selectedTemplate.elements.map((el) =>
-    el.label === "Nama Peserta"
-      ? { ...el, value: siswa.nama }
-      : el
-  );
-
-  const finalTemplate = {
-    ...selectedTemplate,
-    elements: filledElements,
-  };
-
-  setPreviewData(finalTemplate);
-  setShowPreview(true);
 };
-
-
 
   const handleImport = (e) => {
     const file = e.target.files[0];
@@ -211,22 +274,31 @@ const handleCetakHal = (halKe, siswa) => {
         try {
           const importedData = results.data
             .filter(row => Object.values(row).some(val => val && val.trim() !== ""))
-            .map((row, index) => ({
-              id: data.length + index + 1,
-              nis: row?.["NIS/NPM"] || "",
-              nama: row?.["Nama"] || "",
-              tempatLahir: row?.["Tempat Lahir"] || "",
-              tanggalLahir: row?.["Tanggal Lahir"] || "",
-              kelas: row?.["Kelas/Semester"] || "",
-              program: row?.["Program Keahlian"] || "",
-              kompetensi: row?.["Kompetensi Keahlian"] || "",
-              sekolah: row?.["Sekolah/Perguruan Tinggi"] || "",
-              instansi: row["Nama Instansi"],
-              alamat: row["Alamat Instansi"],
-              tanggalMulai: row["Tanggal Mulai"],
-              tanggalSelesai: row["Tanggal Selesai"],
-              lamaMagang: row["Lama Magang"],
-          }));
+            .map((row, index) => {
+              // Format tanggal dari CSV ke format ISO
+              const formatDate = (dateStr) => {
+                if (!dateStr) return "";
+                const [day, month, year] = dateStr.split("/");
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+              };
+
+              return {
+                id: data.length + index + 1,
+                nis: row?.["NIS/NPM"] || "",
+                nama: row?.["Nama"] || "",
+                tempatLahir: row?.["Tempat Lahir"] || "",
+                tanggalLahir: row?.["Tanggal Lahir"] || "",
+                kelas: row?.["Kelas/Semester"] || "",
+                program: row?.["Program Keahlian"] || "",
+                kompetensi: row?.["Kompetensi Keahlian"] || "",
+                sekolah: row?.["Sekolah/Perguruan Tinggi"] || "",
+                instansi: row["Nama Instansi"] || "",
+                alamatInstansi: row["Alamat Instansi"] || "",
+                tanggalMulai: formatDate(row["Tanggal Mulai"]),
+                tanggalSelesai: formatDate(row["Tanggal Selesai"]),
+                lamaMagang: row["Lama Magang"] || "",
+              };
+            });
           setData([...data, ...importedData]);
         } catch (error) {
           alert("❌ Gagal import data. Pastikan format CSV sesuai.");
@@ -310,10 +382,6 @@ const handleCetakHal = (halKe, siswa) => {
         </div>
       )}
 
-     
-
-
-
 
       <div className="bg-green-500 text-white p-4 rounded-t font-semibold">
         Data Sertifikat
@@ -345,7 +413,7 @@ const handleCetakHal = (halKe, siswa) => {
 
         {/* Tombol Aksi */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <button
+          {/* <button
             className="bg-gray-300 px-3 py-1 rounded"
             onClick={() => handlePrint(selectedIds)}
           >
@@ -362,7 +430,7 @@ const handleCetakHal = (halKe, siswa) => {
             onClick={() => handlePrint(selectedIds.slice(1))}
           >
             Print Hal 2 Selected
-          </button>
+          </button> */}
           <button
             className="bg-yellow-400 px-3 py-1 rounded"
             onClick={handleDownloadExcel}
@@ -405,7 +473,7 @@ const handleCetakHal = (halKe, siswa) => {
                 <th className="p-2">Kelas</th>
                 <th className="p-2">Program Keahlian</th>
                 <th className="p-2">Kompetensi Keahlian</th>
-                <th className="p-2">Sekolah Asal</th>
+                <th className="p-2">Sekolah/Perguruan Tinggi</th>
                 <th className="p-2">Nama Instansi</th>
                 <th className="p-2">Alamat Instansi</th>
                 <th className="p-2">Tanggal Mulai</th>
@@ -442,17 +510,12 @@ const handleCetakHal = (halKe, siswa) => {
                  <td className="p-2">
                   <div className="flex gap-2 flex-wrap">
                     <button
-                        onClick={() => handleCetakHal(1, item)}
-                        className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
-                      >
-                        HAL 1
-                      </button>
-                      <button
-                        onClick={() => handleCetakHal(2, item)}
-                        className="bg-gray-600 text-white px-2 py-1 rounded text-xs"
-                      >
-                        HAL 2
-                      </button>
+                      onClick={() => handleCetakMagang(item)}
+                      className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+                    >
+                      MAGANG/KP/PKL
+                    </button>
+
 
                     <button
                       className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
@@ -509,6 +572,7 @@ const handleCetakHal = (halKe, siswa) => {
 
             <h2 className="text-xl font-semibold mb-4 text-center">Tambah Data Siswa</h2>
 
+            {/* Form Tambah Data Siswa*/}
             <form 
                 onSubmit={(e) => {
                 e.preventDefault();
@@ -706,7 +770,7 @@ const handleCetakHal = (halKe, siswa) => {
                             type="text"
                             value={lamaMagang}
                             readOnly
-                            placeholder="Contoh: 3 bulan atau 90 hari" 
+                            // placeholder="Contoh: 3 bulan atau 90 hari" 
                             className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
                         />
                     </div>
@@ -743,7 +807,8 @@ const handleCetakHal = (halKe, siswa) => {
 
               <h2 className="text-xl font-semibold mb-4 text-center">Edit Data</h2>
 
-            <form
+          {/* FORM EDIT DATA  */}
+          <form
               onSubmit={(e) => {
                 e.preventDefault();
                 const form = e.target;
@@ -759,9 +824,9 @@ const handleCetakHal = (halKe, siswa) => {
                   sekolah: form.sekolah.value,
                   instansi: form.instansi.value,
                   alamatInstansi: form.alamatInstansi.value,
-                  tanggalMulai: form.tanggalMulai.value,
-                  tanggalSelesai: form.tanggalSelesai.value,
-                  lamaMagang: form.lamaMagang.value,
+                  tanggalMulai: editTanggalMulai,
+                  tanggalSelesai: editTanggalSelesai,
+                  lamaMagang: editLamaMagang,
                 };
 
                 setData(data.map((d) => (d.id === updated.id ? updated : d)));
@@ -855,8 +920,11 @@ const handleCetakHal = (halKe, siswa) => {
                     id="tanggalMulai"
                     name="tanggalMulai"
                     type="date"
-                    value={tanggalMulai}
-                    onChange={(e) => setTanggalMulai(e.target.value)}
+                    value={editTanggalMulai}
+                    onChange={(e) => {
+                      setEditTanggalMulai(e.target.value);
+                      hitungEditLamaMagang(e.target.value, editTanggalSelesai);
+                    }}
                     className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-600"
                   />
                 </div>
@@ -868,8 +936,11 @@ const handleCetakHal = (halKe, siswa) => {
                     id="tanggalSelesai"
                     name="tanggalSelesai"
                     type="date"
-                    value={tanggalSelesai}
-                    onChange={(e) => setTanggalSelesai(e.target.value)}
+                    value={editTanggalSelesai}
+                    onChange={(e) => {
+                      setEditTanggalSelesai(e.target.value);
+                      hitungEditLamaMagang(editTanggalMulai, e.target.value);
+                    }}
                     className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-600"
                   />
                 </div>
@@ -883,7 +954,7 @@ const handleCetakHal = (halKe, siswa) => {
                   id="lamaMagang"
                   name="lamaMagang"
                   type="text"
-                  value={lamaMagang}
+                  value={editLamaMagang}
                   readOnly
                   className="w-full border border-gray-300 p-3 rounded-md bg-gray-100 text-gray-600"
                 />
