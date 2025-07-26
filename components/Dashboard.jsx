@@ -299,14 +299,14 @@ export default function Dashboard() {
                                         color="green"
                                     />
                                     <MenuCard
-                                        onClick={() => handleMenuClick("/divisi")}
+                                        onClick={() => handleMenuClick("/templateSertifikat")}
                                         icon="🎨"
                                         title="Template Sertifikat"
                                         description="Atur Template Sertifikat"
                                         color="purple"
                                     />
                                     <MenuCard
-                                        onClick={() => handleMenuClick("/quotaManagement")}
+                                        onClick={() => handleMenuClick("/sertifikat")}
                                         icon="✅"
                                         title="Verifikasi Sertifikat"
                                         description="Verifikasi Peserta yang mendapatkan sertifikat"

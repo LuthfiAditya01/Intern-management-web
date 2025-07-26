@@ -18,6 +18,60 @@ export default function SertifikatPreview({ template }) {
         
       }}
     >
+      {/* Logo BPS dan tulisan */}
+      <div style={{ position: "absolute", top: "15px", left: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <img
+          src="/uploads/logobps.png"
+          alt="Logo Kiri"
+          style={{
+            // top: "15px",
+            // left: "20px",
+            width: "60px", 
+            height: "auto",
+          }}
+        />
+        <div
+          style={{
+            fontFamily: "'Arial Black', Arial, sans-serif",
+            fontStyle: "italic",
+            textTransform: "uppercase",
+            fontSize: "8px",
+            lineHeight: "1.5",
+            left: "5px",
+            marginTop: "-10px",
+            marginLeft: "-3px",
+          }}
+        >
+          <div>BADAN PUSAT STATISTIK</div>
+          <div>KOTA BANDAR LAMPUNG</div>
+        </div>
+      </div>
+💡
+
+      {/* Logo Berakhlak  */}
+      <img
+        src="/uploads/logoberakhlak.png"
+        alt="Logo Kanan 1"
+        style={{
+          position: "absolute",
+          top: "15px",
+          right: "100px",
+          width: "78px",
+        }}
+      />
+
+      {/* Logo melayani bangsa */}
+      <img
+        src="/uploads/logomelayani.png"
+        alt="Logo Kanan 2"
+        style={{
+          position: "absolute",
+          top: "15px",
+          right: "20px",
+          width: "70px",
+        }}
+      />
+
       {template.elements.map((el) => (
         <div
           key={el.id}

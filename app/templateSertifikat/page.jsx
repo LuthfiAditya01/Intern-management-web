@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import PreviewSertifikat from "../../components/PreviewSertifikat";
+import NavbarGeneral from "@/components/NavbarGeneral";
 
 export default function TemplatePage() {
   const [templates, setTemplates] = useState([]);
@@ -19,7 +20,7 @@ export default function TemplatePage() {
           id: 1,
           label: "Judul",
           value: "SERTIFIKAT",
-          top: 25,
+          top: 27,
           left: 50, // Ubah ke 50% untuk center
           fontSize: 25,
           fontWeight: "bold",
@@ -30,7 +31,7 @@ export default function TemplatePage() {
           id: 2,
           label: "Nomor",
           value: "NO: 0001/BPS/1871/KPG/2025",
-          top: 58,
+          top: 60,
           left: 50,
           fontSize: 15,
           textAlign: "center",
@@ -40,7 +41,7 @@ export default function TemplatePage() {
           id: 3,
           label: "Sub Judul",
           value: "diberikan kepada:",
-          top: 100,
+          top: 102,
           left: 50,
           fontSize: 13,
           textAlign: "center",
@@ -50,7 +51,7 @@ export default function TemplatePage() {
           id: 4,
           label: "Nama Peserta",
           value: "Nama Peserta",
-          top: 123,
+          top: 125,
           left: 50,
           fontSize: 28,
           fontFamily: "Great Vibes, cursive",
@@ -62,7 +63,7 @@ export default function TemplatePage() {
           label: "Deskripsi",
           value:
             "atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode 16 Juni sampai 01 Agustus 2025",
-          top: 172,
+          top: 174,
           left: 50,
           fontSize: 13,
           maxWidth: 500, // Perlebar maxWidth
@@ -73,7 +74,7 @@ export default function TemplatePage() {
           id: 6,
           label: "Tanggal",
           value: "Bandar Lampung, 05 Agustus 2025",
-          top: 255,
+          top: 257,
           left: 50,
           fontSize: 13,
           textAlign: "center",
@@ -83,7 +84,7 @@ export default function TemplatePage() {
           id: 7,
           label: "Jabatan",
           value: "Kepala Badan Pusat Statistik Kota Bandar Lampung",
-          top: 290,
+          top: 292,
           left: 50,
           fontSize: 13,
           fontWeight: "bold",
@@ -95,7 +96,7 @@ export default function TemplatePage() {
           id: 8,
           label: "Nama Penandatangan",
           value: "Dr. Hady Suryono, M.Si",
-          top: 388,
+          top: 390,
           left: 50,
           fontSize: 13,
           fontWeight: "bold",
@@ -150,62 +151,72 @@ export default function TemplatePage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Template Sertifikat</h1>
+      <NavbarGeneral
+        title="Template Sertifikat Peserta Magang"
+        subTitle="Atur elemen dalam template sertifikat yang akan digunakan untuk peserta magang"
+      />
 
-      <div className="bg-green-600 text-white px-4 py-2 rounded-t">
-        Data Template
-      </div>
+      <div className="bg-white rounded-xl shadow-lg border md:max-w-7xl mx-auto border-gray-100 p-2.5 md:p-6 mb-8">
+        <div className="flex flex-col md:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-semibold mb-4">Template Sertifikat</h1>
+            <div className="bg-blue-600 text-white px-4 py-2 rounded-t">
+              Data Template
+            </div>
 
-      <div className="overflow-x-auto border">
-        <table className="w-full table-auto text-sm">
-          <thead className="bg-green-200 text-left">
-            <tr>
-              <th className="px-4 py-2">NO</th>
-              <th className="px-4 py-2">TEMPLATE</th>
-              <th className="px-4 py-2">STATUS</th>
-              <th className="px-4 py-2">NAMA TEMPLATE</th>
-              <th className="px-4 py-2">PROCESS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {templates.map((template, index) => (
-              <tr key={index} className="border-t">
-                <td className="px-4 py-2">{template.id}</td>
-                <td className="px-4 py-2">
-                  {template.imageUrl ? (
-                    <img
-                      src={template.imageUrl}
-                      alt="Template"
-                      className="w-40 border"
-                    />
-                  ) : (
-                    <span>-</span>
-                  )}
-                </td>
-                <td className="px-4 py-2 font-bold text-green-600">
-                  {template.status}
-                </td>
-                <td className="px-4 py-2">{template.nama}</td>
-                <td className="px-4 py-2 space-x-2">
-                  {/* <button
-                    className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
-                    onClick={() => handleSetDefault(template.id)}
-                  >
-                    ATUR DEFAULT
-                  </button> */}
-                  <button
-                    className="bg-green-500 text-white px-2 py-1 rounded text-xs"
-                    onClick={() => handleOpenEditElement(template)}
-                  >
-                    ELEMENT
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="p-2 text-sm text-gray-600">
-          Total : {templates.length}, Row (1 - {templates.length})
+            <div className="overflow-x-auto border">
+              <table className="w-full table-auto text-sm">
+                <thead className="bg-blue-200 text-left">
+                  <tr>
+                    <th className="px-4 py-2">NO</th>
+                    <th className="px-4 py-2">TEMPLATE</th>
+                    <th className="px-4 py-2">STATUS</th>
+                    <th className="px-4 py-2">NAMA TEMPLATE</th>
+                    <th className="px-4 py-2">PROCESS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {templates.map((template, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="px-4 py-2">{template.id}</td>
+                      <td className="px-4 py-2">
+                        {template.imageUrl ? (
+                          <img
+                            src={template.imageUrl}
+                            alt="Template"
+                            className="w-40 border"
+                          />
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 font-bold text-blue-600">
+                        {template.status}
+                      </td>
+                      <td className="px-4 py-2">{template.nama}</td>
+                      <td className="px-4 py-2 space-x-2">
+                        {/* <button
+                          className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleSetDefault(template.id)}
+                        >
+                          ATUR DEFAULT
+                        </button> */}
+                        <button
+                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs cursor-pointer"
+                          onClick={() => handleOpenEditElement(template)}
+                        >
+                          ELEMENT
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="p-2 text-sm text-gray-600">
+                Total : {templates.length}, Row (1 - {templates.length})
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -224,9 +235,12 @@ export default function TemplatePage() {
               <form onSubmit={handleSubmit}>
                 {selectedTemplate.elements
                   .filter((el) =>
-                    ["Nomor", "Tanggal", "Jabatan", "Nama Penandatangan"].includes(
-                      el.label
-                    )
+                    [
+                      "Nomor",
+                      "Tanggal",
+                      "Jabatan",
+                      "Nama Penandatangan",
+                    ].includes(el.label)
                   )
                   .map((el, index) => (
                     <div key={el.id} className="mb-3">
@@ -236,12 +250,17 @@ export default function TemplatePage() {
                         value={el.value}
                         onChange={(e) => {
                           const updated = [...selectedTemplate.elements];
-                          const targetIdx = updated.findIndex((x) => x.id === el.id);
+                          const targetIdx = updated.findIndex(
+                            (x) => x.id === el.id
+                          );
                           updated[targetIdx].value = e.target.value;
                           setSelectedTemplate({
                             ...selectedTemplate,
                             elements: updated,
                           });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.preventDefault();
                         }}
                         className="w-full border px-3 py-2 rounded"
                       />
@@ -252,13 +271,13 @@ export default function TemplatePage() {
                   <button
                     type="button"
                     onClick={() => setShowEditElement(false)}
-                    className="px-4 py-2 bg-gray-300 rounded"
+                    className="px-4 py-2 bg-gray-300 rounded cursor-pointer"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
                   >
                     Simpan
                   </button>
