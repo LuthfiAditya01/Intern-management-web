@@ -128,6 +128,30 @@ export default function Dashboard() {
         fetchInterns();
     }, []);
 
+
+    // useEffect(() => {
+    //     const fetchInterns = async () => {
+    //         try {
+    //             const res = await fetch("api/intern", {
+    //                 cache: 'no-store',
+    //             });
+
+    //             if (!res.ok) {
+    //                 throw new Error("Failed to fetch data");
+    //             }
+
+    //             const data = await res.json();
+    //             setInterns(data.interns);
+    //         } catch (error) {
+    //             console.log("Error loading data: ", error);
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }
+
+    //     fetchInterns();
+    // }, []);
+
     useEffect(() => {
         const fetchGrade = async () => {
             if (!userInternData) return;
