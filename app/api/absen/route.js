@@ -86,13 +86,25 @@ export async function GET(request) {
     // Connect ke MongoDB
     await connectMongoDB();
 
-    // Ambil parameter userId dari URL jika ada
+    // Ambil parameter userId dan date dari URL jika ada
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const date = searchParams.get("date");
 
     let query = {};
     if (userId) {
-      query.idUser = userId; // Mencari berdasarkan string userId
+      query.idUser = userId;
+    }
+    
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      query.absenDate = {
+        $gte: startDate,
+        $lt: endDate
+      };
     }
 
     // Ambil data absensi

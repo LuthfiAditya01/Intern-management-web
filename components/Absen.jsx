@@ -9,6 +9,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import FormIzin from "./FormIzin";
 const LocationMap = dynamic(() => import("@/components/LocationMaps"), {
   ssr: false,
 });
@@ -39,7 +40,7 @@ export default function Absen() {
   const [formLoading, setFormLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [apiError, setApiError] = useState("");
-  
+  const [isIzin, setIsIzin] = useState(false);
 
   // Handler untuk meminta lokasi - Harus dipicu oleh interaksi pengguna
   const requestLocation = () => {
@@ -116,15 +117,15 @@ export default function Absen() {
   useEffect(() => {
     const waktuLokal = new Date();
     const jam = waktuLokal.getHours();
-    
-    if(jam >= 5 && jam < 23) {
+
+    if (jam >= 5 && jam < 23) {
       console.log(`User mengisi di waktu yang diperbolehkan, yaitu pada jam ${jam}`);
       setTimeError(false);
     } else {
       console.log(`User mengisi di waktu yang tidak diperbolehkan, yaitu pada jam ${jam}`);
       setTimeError(true);
     }
-  }, [])
+  }, []);
 
   // Mengambil data user dari Firebase Auth
   useEffect(() => {
@@ -261,14 +262,14 @@ export default function Absen() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex justify-center items-center">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-          <div className="text-6xl mb-4"><img
-            src="/assets/image/forbidden.png"
-            alt="error icon"
-            className="h-20 mx-auto mb-4 motion-safe:animate-pulse hover:animate-none"
-          /></div>
-          <h2 className="text-2xl font-bold text-red-600 mb-4">
-            Waktu Absen Tidak Sesuai
-          </h2>
+          <div className="text-6xl mb-4">
+            <img
+              src="/assets/image/forbidden.png"
+              alt="error icon"
+              className="h-20 mx-auto mb-4 motion-safe:animate-pulse hover:animate-none"
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Waktu Absen Tidak Sesuai</h2>
           <p className="text-gray-600 mb-6">
             Silakan absen pada jam yang telah ditentukan:
             <br />
@@ -282,10 +283,9 @@ export default function Absen() {
             onClick={() => {
               setTimeError(false);
               setLoading(true);
-              route.push('/dashboard');
+              route.push("/dashboard");
             }}
-            className="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-300"
-          >
+            className="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all duration-300">
             Kembali ke Dashboard
           </Button>
         </div>
@@ -304,122 +304,136 @@ export default function Absen() {
               <Link href={"/dashboard"}> Kembali ke Dashboard </Link>
             </Button>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Isi Daftar Hadir</h1>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                {isIzin ? 'Form Tidak Hadir' : 'Isi Daftar Hadir'}
+              </h1>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Form Absensi</h2>
-            {apiError && <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg">{apiError}</div>}
-            {submitError && <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">{submitError}</div>}
-            {success && <div className="mb-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg">{success}</div>}
-
-            {!locationRequested ? (
-              <div className="mb-6 text-center">
-                <p className="mb-4 text-gray-700">Untuk mengisi absensi, kami memerlukan akses ke lokasi Anda.</p>
-                <Button
-                  onClick={requestLocation}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all">
-                  Izinkan Akses Lokasi
-                </Button>
-              </div>
-            ) : isLoading ? (
-              <div className="mb-6 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p>Mendapatkan lokasi Anda...</p>
-              </div>
-            ) : coordinates && (!waitingForAccuracy || (accuracy && accuracy <= MINIMUM_ACCURACY)) ? (
+            {isIzin ? (
+              <FormIzin userId={user?.uid} nama={formData.nama} />
+            ) : (
               <>
-                {accuracy && <div className="mb-4 p-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg">Akurasi lokasi: {Math.round(accuracy)} meter</div>}
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Form Absensi</h2>
+                {apiError && <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg">{apiError}</div>}
+                {submitError && <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">{submitError}</div>}
+                {success && <div className="mb-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg">{success}</div>}
 
-                <LocationMap
-                  onLocationUpdate={handleLocationUpdate}
-                  coords={coordinates}
-                />
-
-                <form
-                  onSubmit={handleSubmit}
-                  className="">
-                  <InputAbsen
-                    key="nama-input"
-                    type={"text"}
-                    name={"nama"}
-                    label={"Masukkan Nama Anda"}
-                    placeholder={"Memuat nama..."}
-                    required={true}
-                    readonly={true}
-                    value={formData.nama}
-                  />
-                  <InputAbsen
-                    key="long-input"
-                    type={"number"}
-                    name={"longCordinate"}
-                    label={"Kordinat Longitude"}
-                    placeholder={"Contoh: -6.2088"}
-                    required={true}
-                    readonly={true}
-                    value={formData.longCordinate}
-                  />
-                  <InputAbsen
-                    key="lat-input"
-                    type={"number"}
-                    name={"latCordinate"}
-                    label={"Kordinat Latitude"}
-                    placeholder={"Contoh: 106.8456"}
-                    required={true}
-                    readonly={true}
-                    value={formData.latCordinate}
-                  />
-                  <InputAbsen
-                    key="note-input"
-                    type={"textarea"}
-                    name={"dailyNote"}
-                    label={"Catatan Kegiatan"}
-                    placeholder={"Isikan Rencana kegiatan hari ini"}
-                    required={true}
-                    readonly={false}
-                    note={"Isi Rencana Kegiatan yang akan dilakukan hari ini"}
-                    minLength={50}
-                    value={formData.dailyNote}
-                    onChange={handleChange}
-                  />
-                  <div className="mt-6">
+                {!locationRequested ? (
+                  <div className="mb-6 text-center">
+                    <p className="mb-4 text-gray-700">Untuk mengisi absensi, kami memerlukan akses ke lokasi Anda.</p>
                     <Button
-                      type="submit"
-                      variant={"default"}
-                      size={"default"}
-                      disabled={formLoading}
-                      className={"cursor-pointer bg-blue-300 hover:bg-blue-600 hover:p-5 hover:-translate-y-2 hover:-translate-x-1 hover:text-white transition-all ease-out duration-500"}>
-                      {formLoading ? "Memproses..." : "Isi Daftar Hadir"}
+                      onClick={requestLocation}
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all">
+                      Izinkan Akses Lokasi
+                    </Button>
+                    <p className="my-4 text-gray-700">Atau</p>
+                    <Button
+                      onClick={() => setIsIzin(true)}
+                      className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-all">
+                      Isi form Tidak Hadir
                     </Button>
                   </div>
-                </form>
-              </>
-            ) : coordinates && waitingForAccuracy ? (
-              <div className="mb-6">
-                <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg">
-                  <p>Mencoba mendapatkan lokasi yang lebih akurat...</p>
-                  <p>
-                    Akurasi saat ini: {accuracy ? Math.round(accuracy) : "?"} meter (target: {MINIMUM_ACCURACY} meter)
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                      style={{
-                        width: accuracy ? `${Math.min(100, (MINIMUM_ACCURACY / accuracy) * 100)}%` : "0%",
-                      }}></div>
+                ) : isLoading ? (
+                  <div className="mb-6 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p>Mendapatkan lokasi Anda...</p>
                   </div>
-                  <p className="text-xs mt-2">Harap tunggu atau pindah ke area dengan sinyal GPS lebih baik</p>
-                </div>
+                ) : coordinates && (!waitingForAccuracy || (accuracy && accuracy <= MINIMUM_ACCURACY)) ? (
+                  <>
+                    {accuracy && <div className="mb-4 p-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg">Akurasi lokasi: {Math.round(accuracy)} meter</div>}
 
-                <Button
-                  onClick={() => setWaitingForAccuracy(false)}
-                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-all">
-                  Gunakan Lokasi Saat Ini
-                </Button>
-              </div>
-            ) : (
-              <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">Tidak bisa mendapatkan lokasi. Harap izinkan akses lokasi dan coba lagi.</div>
+                    <LocationMap
+                      onLocationUpdate={handleLocationUpdate}
+                      coords={coordinates}
+                    />
+
+                    <form
+                      onSubmit={handleSubmit}
+                      className="">
+                      <InputAbsen
+                        key="nama-input"
+                        type={"text"}
+                        name={"nama"}
+                        label={"Masukkan Nama Anda"}
+                        placeholder={"Memuat nama..."}
+                        required={true}
+                        readonly={true}
+                        value={formData.nama}
+                      />
+                      <InputAbsen
+                        key="long-input"
+                        type={"number"}
+                        name={"longCordinate"}
+                        label={"Kordinat Longitude"}
+                        placeholder={"Contoh: -6.2088"}
+                        required={true}
+                        readonly={true}
+                        value={formData.longCordinate}
+                      />
+                      <InputAbsen
+                        key="lat-input"
+                        type={"number"}
+                        name={"latCordinate"}
+                        label={"Kordinat Latitude"}
+                        placeholder={"Contoh: 106.8456"}
+                        required={true}
+                        readonly={true}
+                        value={formData.latCordinate}
+                      />
+                      <InputAbsen
+                        key="note-input"
+                        type={"textarea"}
+                        name={"dailyNote"}
+                        label={"Catatan Kegiatan"}
+                        placeholder={"Isikan Rencana kegiatan hari ini"}
+                        required={true}
+                        readonly={false}
+                        note={"Isi Rencana Kegiatan yang akan dilakukan hari ini"}
+                        minLength={50}
+                        value={formData.dailyNote}
+                        onChange={handleChange}
+                      />
+                      <div className="mt-6">
+                        <Button
+                          type="submit"
+                          variant={"default"}
+                          size={"default"}
+                          disabled={formLoading}
+                          className={"cursor-pointer bg-blue-300 hover:bg-blue-600 hover:p-5 hover:-translate-y-2 hover:-translate-x-1 hover:text-white transition-all ease-out duration-500"}>
+                          {formLoading ? "Memproses..." : "Isi Daftar Hadir"}
+                        </Button>
+                      </div>
+                    </form>
+                  </>
+                ) : coordinates && waitingForAccuracy ? (
+                  <div className="mb-6">
+                    <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg">
+                      <p>Mencoba mendapatkan lokasi yang lebih akurat...</p>
+                      <p>
+                        Akurasi saat ini: {accuracy ? Math.round(accuracy) : "?"} meter (target: {MINIMUM_ACCURACY} meter)
+                      </p>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                          style={{
+                            width: accuracy ? `${Math.min(100, (MINIMUM_ACCURACY / accuracy) * 100)}%` : "0%",
+                          }}></div>
+                      </div>
+                      <p className="text-xs mt-2">Harap tunggu atau pindah ke area dengan sinyal GPS lebih baik</p>
+                    </div>
+
+                    <Button
+                      onClick={() => setWaitingForAccuracy(false)}
+                      className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-all">
+                      Gunakan Lokasi Saat Ini
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">Tidak bisa mendapatkan lokasi. Harap izinkan akses lokasi dan coba lagi.</div>
+                )}
+              </>
             )}
           </div>
         </div>

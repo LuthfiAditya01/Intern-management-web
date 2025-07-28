@@ -16,6 +16,16 @@ const formatDate = (dateString) => {
     return `${day}-${month}-${year}`;
 };
 
+// Add a helper function to check if time is late
+const isLate = (timeString) => {
+  if (!timeString) return false;
+  
+  const [hours, minutes] = timeString.split(':').map(Number);
+  
+  // Check if time is after 7:30 AM
+  return hours > 7 || (hours === 7 && minutes > 30);
+};
+
 
 export default function Dashboard() {
     const [interns, setInterns] = useState([]);
@@ -34,6 +44,9 @@ export default function Dashboard() {
     const [mentor, setMentor] = useState([]);
     const [currentMentorData, setCurrentMentorData] = useState(null);
     const [menteeCount, setMenteeCount] = useState(0);
+    const [waktuHadir, setWaktuHadir] = useState(null);
+    const [waktuPulang, setWaktuPulang] = useState(null);
+    const [isIzin, setIsIzin] = useState(null);
 
 
     const route = useRouter();
@@ -62,6 +75,66 @@ export default function Dashboard() {
                     console.log("🙅‍♂️ Bukan admin");
                     console.log(token);
                 }
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Set to start of day
+                
+                // Fetch absen data
+                axios.get("/api/absen", {
+                    params: { 
+                        userId: token.claims.user_id,
+                        date: today.toISOString()
+                    }
+                })
+                .then(response => {
+                    if (response.data && response.data.absensi && response.data.absensi.length > 0) {
+                        // Find today's absen data
+                        const todayAbsen = response.data.absensi.find(absen => {
+                            const absenDate = new Date(absen.absenDate);
+                            absenDate.setHours(0, 0, 0, 0);
+                            return absenDate.getTime() === today.getTime();
+                        });
+                        
+                        if (todayAbsen) {
+                            // Format the check-in time
+                            const absenDate = new Date(todayAbsen.absenDate);
+                            const hours = absenDate.getHours().toString().padStart(2, '0');
+                            const minutes = absenDate.getMinutes().toString().padStart(2, '0');
+                            const formattedTime = `${hours}:${minutes}`;
+                            
+                            setWaktuHadir(formattedTime);
+                            
+                            // If there's checkout time
+                            if (todayAbsen.checkoutTime) {
+                                const checkoutDate = new Date(todayAbsen.checkoutTime);
+                                const checkoutHours = checkoutDate.getHours().toString().padStart(2, '0');
+                                const checkoutMinutes = checkoutDate.getMinutes().toString().padStart(2, '0');
+                                const formattedCheckout = `${checkoutHours}:${checkoutMinutes}`;
+                                
+                                setWaktuPulang(formattedCheckout);
+                            }
+                        } else {
+                            setWaktuHadir(null);
+                            setWaktuPulang(null);
+                        }
+                    } else {
+                        setWaktuHadir(null);
+                        setWaktuPulang(null);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching absen data:", error);
+                    setWaktuHadir(null);
+                    setWaktuPulang(null);
+                });
+
+                // Fetch Data Izin
+                axios.get("/api/izin", {
+                    params: { 
+                        userId: token.claims.user_id,
+                        date: today.toISOString()
+                    }
+                })
             }
         });
 
@@ -418,6 +491,20 @@ export default function Dashboard() {
                             {/* Statistics Cards */}
                             {userInternData && (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                    <StatCard
+                                        title="Waktu Absen Datang"
+                                        value={
+                                            <span className={isLate(waktuHadir) ? "text-red-500" : "text-green-400"}>
+                                                {waktuHadir || "Belum absen"}
+                                            </span>
+                                        }
+                                        icon={<img src={"/assets/image/start.png"} className={"w-[50px]"} />}
+                                    />
+                                    <StatCard
+                                        title="Waktu Absen Pulang"
+                                        value={waktuPulang || "Belum checkout"}
+                                        icon={<img src={"/assets/image/finish.png"} className={"w-[50px]"} />}
+                                    />
                                     <StatCard
                                         title="Status Magang Kamu"
                                         value={

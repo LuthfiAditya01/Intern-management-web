@@ -57,6 +57,10 @@ const internSchema = new Schema({
         ref: 'Pembimbing',
         default: null,
     },
+    isSertifikat: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true
 });
