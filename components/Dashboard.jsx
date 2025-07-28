@@ -32,6 +32,7 @@ export default function Dashboard() {
     const [pageLoading, setPageLoading] = useState(false);
     const [userGrade, setUserGrade] = useState("-");
     const [userMentor, setUserMentor] = useState("-");
+    const [hasCertificate, setHasCertificate] = useState(false);
 
     const route = useRouter();
 
@@ -80,7 +81,7 @@ export default function Dashboard() {
         async function fetchInterns() {
             try {
                 const res = await axios.get("/api/intern");
-                setInterns(res.data.interns);
+                setInterns(res.data.interns);zzz
             } catch (error) {
                 console.error("Failed to fetch interns:", error);
             } finally {
@@ -120,6 +121,22 @@ export default function Dashboard() {
         };
 
         fetchGrade();
+    }, [userInternData]);
+
+    useEffect(() => {
+        const checkCertificateStatus = async () => {
+            if (!userInternData || !userInternData._id) return;
+            
+            try {
+              // Simply check the isSertifikatVerified flag directly from userInternData
+              setHasCertificate(userInternData.isSertifikatVerified === true);
+            } catch (error) {
+              console.error("Error checking certificate status:", error);
+              setHasCertificate(false);
+            }
+          };
+          
+          checkCertificateStatus();
     }, [userInternData]);
 
 
@@ -393,7 +410,7 @@ export default function Dashboard() {
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/dashboard")}
                                                 icon="🗓️"
-                                                title="Jadwal Tersedia Kesempatan Magang"
+                                               
                                                 description="Lihat ketersediaan jadwal magang"
                                                 color="blue"
                                             />
@@ -408,7 +425,7 @@ export default function Dashboard() {
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/dashboard")}
                                                 icon="🗓️"
-                                                title="Jadwal Tersedia Kesempatan Magang"
+                                               
                                                 description="Lihat ketersediaan jadwal magang"
                                                 color="blue"
                                             />
@@ -418,6 +435,19 @@ export default function Dashboard() {
                                                 title="Histori Daftar Hadir"
                                                 description="Lihat histori daftar hadirmu!"
                                                 color="green"
+                                            />
+                                            <MenuCard
+                                                onClick={() => {
+                                                    if (hasCertificate) {
+                                                        router.push("/sertifikatSaya");
+                                                    } else {
+                                                        alert("Sertifikat belum tersedia");
+                                                    }
+                                                }}
+                                                icon="📜"
+                                                title="Sertifikat"
+                                                description={hasCertificate ? "Lihat dan unduh sertifikatmu" : "Sertifikat belum tersedia"}
+                                                color={hasCertificate ? "green" : "gray"}
                                             />
                                         </div>
                                     </div>

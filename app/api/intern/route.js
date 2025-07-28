@@ -1,5 +1,5 @@
-import Intern from "./../../../models/internInfo";
-import connectMongoDB from "../../../lib/mongodb";
+import {Intern} from "@/models/internInfo";
+import {connectMongoDB} from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
@@ -33,7 +33,7 @@ export async function GET(request) {
     }
 
     if (!month) {
-        const interns = await Intern.find();
+        const interns = await Intern.find().populate('pembimbing', 'nama');
         return NextResponse.json({ interns });
     }
 
@@ -44,7 +44,9 @@ export async function GET(request) {
     const interns = await Intern.find({
         tanggalMulai: { $lte: endOfMonth },
         tanggalSelesai: { $gte: startOfMonth },
-    }).sort({ nama: 1 });
+    })
+        .populate('pembimbing')
+        .sort({ nama: 1 });
 
     return NextResponse.json({ interns });
 }

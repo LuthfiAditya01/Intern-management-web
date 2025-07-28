@@ -1,17 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
-import { faL } from "@fortawesome/free-solid-svg-icons";
 import PreviewSertifikat from "../../components/PreviewSertifikat";
 import NavbarGeneral from "@/components/NavbarGeneral";
 
 const SertifikatPage = () => {
+  // Existing state
   const [filters, setFilters] = useState({
     kelas: "",
-    jurusan: "",
+    prodi: "",
     search: "",
   });
-
   const [data, setData] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -27,21 +26,162 @@ const SertifikatPage = () => {
   const [templates, setTemplates] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [apiError, setApiError] = useState(false);
+  
+  // New state for intern data
+  const [loading, setLoading] = useState(true);
+  const [disabledButtons, setDisabledButtons] = useState({});
 
+  // Helper function to calculate duration between dates
+  const calculateDuration = (start, end) => {
+    if (!start || !end) return '';
+    
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const months = Math.floor(diffDays / 30);
+    const days = diffDays % 30;
+    
+    let result = '';
+    if (months > 0) result += `${months} bulan `;
+    if (days > 0) result += `${days} hari`;
+    
+    return result.trim();
+  };
+
+  // Handle certificate verification
+  // const handleVerifySertifikat = async (item) => {
+  //   try {
+  //     if (!item.id) {
+  //       alert("ID peserta tidak ditemukan");
+  //       return;
+  //     }
+
+  //     const response = await fetch(`/api/intern/${item.id}/verify-sertifikat`, {
+  //       method: "PUT",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     });
+
+  //     const result = await response.json();
+
+  //     if (response.ok) {
+  //       alert(`Sertifikat untuk ${item.nama} berhasil diverifikasi`);
+  //       // Update local state to reflect the change
+  //       setData(
+  //         data.map((d) =>
+  //           d.id === item.id ? { ...d, isSertifikatVerified: true } : d
+  //         )
+  //       );
+  //       setDisabledButtons({
+  //         ...disabledButtons,
+  //         [item.id]: true
+  //       });
+  //     } else {
+  //       throw new Error(result.message || "Gagal memverifikasi sertifikat");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     alert(`Gagal memverifikasi sertifikat: ${error.message}`);
+  //   }
+  // };
+
+  // Fetch intern data from the database
   useEffect(() => {
+    const fetchInterns = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/intern');
+        if (!response.ok) throw new Error('Failed to fetch interns');
+        
+        const data = await response.json();
+        if (!data.interns || !Array.isArray(data.interns)) {
+          throw new Error('Invalid data format received from API');
+        }
+        
+        // Format the data to match your expected structure
+        const formattedData = data.interns.map((intern, index) => ({
+          id: intern._id || `intern-${index}`,
+          nim: intern.nim || '',
+          nama: intern.nama || '',
+          kelas: intern.kelas || '',
+          prodi: intern.prodi || '',
+          sekolah: intern.kampus || '',
+          tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split('T')[0] : '',
+          tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split('T')[0] : '',
+          lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
+          isSertifikatVerified: intern.isSertifikatVerified || false,
+          userId: intern.userId || null
+        }));
+        
+        setData(formattedData);
+        
+        // Set up disabled buttons for already verified interns
+        const disabledMap = {};
+        formattedData.forEach(intern => {
+          if (intern.isSertifikatVerified) {
+            disabledMap[intern.id] = true;
+          }
+        });
+        setDisabledButtons(disabledMap);
+      } catch (error) {
+        console.error('Error fetching intern data:', error);
+        setApiError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInterns();
+    
+    // Also fetch templates
     const fetchTemplates = async () => {
       try {
         const res = await fetch("/api/template");
         const data = await res.json();
-        console.log("✅ Templates berhasil dimuat:", data); // 👈 tambahkan ini
+        console.log("✅ Templates berhasil dimuat:", data);
         setTemplates(data);
       } catch (err) {
         console.error("❌ Gagal fetch template:", err);
+        setApiError(true);
       }
     };
 
     fetchTemplates();
   }, []);
+
+  // Fix the typo in hitungEditLamaMagang function
+  function hitungEditLamaMagang(tglMulai, tglSelesai) {
+    if (!tglMulai || !tglSelesai) {
+      setEditLamaMagang("");
+      return;
+    }
+
+    const mulai = new Date(tglMulai);
+    const selesai = new Date(tglSelesai);
+
+    // Calculate difference in days
+    const selisihHari = Math.ceil((selesai - mulai) / (1000 * 60 * 60 * 24));
+
+    if (selisihHari < 0) {
+      setEditLamaMagang("Tanggal tidak valid");
+      return;
+    }
+
+    // Convert to months and days - Fix: selisihari -> selisihHari
+    const bulan = Math.floor(selisihHari / 30);
+    const hari = selisihHari % 30; // Fixed typo
+
+    // Format the output string
+    let lama = "";
+    if (bulan > 0) lama += `${bulan} bulan `;
+    if (hari > 0) lama += `${hari} hari`;
+
+    setEditLamaMagang(lama.trim());
+  }
 
   useEffect(() => {
     if (editData) {
@@ -76,10 +216,10 @@ const SertifikatPage = () => {
     const matchesDropdowns =
       (!filters.kelas ||
         item.kelas?.toLowerCase() === filters.kelas.toLowerCase()) &&
-      (!filters.jurusan ||
-        item.jurusan?.toLowerCase() === filters.jurusan.toLowerCase());
-      (!filters.sekolah ||
-        item.sekolah?.toLowerCase() === filters.sekolah.toLowerCase());
+      (!filters.prodi ||
+        item.prodi?.toLowerCase() === filters.prodi.toLowerCase());
+    !filters.sekolah ||
+      item.sekolah?.toLowerCase() === filters.sekolah.toLowerCase();
 
     const matchesSearch =
       !searchTerm ||
@@ -111,29 +251,6 @@ const SertifikatPage = () => {
     setLamaMagang(lama.trim());
   };
 
-  function hitungEditLamaMagang(tglMulai, tglSelesai) {
-    if (!tglMulai || !tglSelesai) return;
-
-    const mulai = new Date(tglMulai);
-    const selesai = new Date(tglSelesai);
-    const selisihHari = Math.ceil((selesai - mulai) / (1000 * 60 * 60 * 24));
-
-    if (selisihHari < 0) {
-      setEditLamaMagang("Tanggal tidak valid");
-      return;
-    }
-
-    // Menggunakan logika yang sama dengan form tambah data
-    const bulan = Math.floor(selisihHari / 30);
-    const hari = selisihHari % 30;
-
-    let lama = "";
-    if (bulan > 0) lama += `${bulan} bulan `;
-    if (hari > 0) lama += `${hari} hari`;
-
-    setEditLamaMagang(lama.trim());
-  }
-
   const toggleCheckbox = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
@@ -158,23 +275,13 @@ const SertifikatPage = () => {
     const selectedData = data.filter((d) => selectedIds.includes(d.id));
     const csv = selectedData
       .map((row) =>
-        [
-          row.nis,
-          row.nama,
-          row.kelas,
-          row.jurusan,
-          row.sekolah,
-        ].join(",")
+        [row.nim, row.nama, row.kelas, row.prodi, row.sekolah].join(",")
       )
       .join("\n");
 
-    const blob = new Blob(
-      [
-        "NIS,Nama,Kelas,Jurusan,Sekolah\n" +
-          csv,
-      ],
-      { type: "text/csv" }
-    );
+    const blob = new Blob(["NIM,Nama,Kelas,Prodi,Sekolah\n" + csv], {
+      type: "text/csv",
+    });
 
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -187,66 +294,7 @@ const SertifikatPage = () => {
   const handleCetakMagang = async (item) => {
     try {
       const res = await fetch("/api/template");
-      const templates = await res.json();
-
-      const selectedTemplate = templates.find(
-        (t) => t.nama === "MAGANG/KP/PKL" && t.status === "DEFAULT"
-      );
-
-      if (!selectedTemplate) {
-        console.error("Available templates:", templates);
-        alert("Template MAGANG/KP/PKL tidak ditemukan");
-        return;
-      }
-
-      // Format tanggal ke format Indonesia
-      const formatTanggal = (dateStr) => {
-        if (!dateStr) return "";
-        try {
-          const date = new Date(dateStr);
-          if (isNaN(date.getTime())) {
-            throw new Error("Invalid date");
-          }
-          return date.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          });
-        } catch (error) {
-          console.error("Error formatting date:", dateStr, error);
-          return dateStr; // Return original string if parsing fails
-        }
-      };
-
-      // Log data untuk debugging
-      console.log("Tanggal Mulai:", item.tanggalMulai);
-      console.log("Tanggal Selesai:", item.tanggalSelesai);
-
-      // Isi template dengan data siswa
-      const filledTemplate = {
-        ...selectedTemplate,
-        elements: selectedTemplate.elements.map((el) => {
-          switch (el.label) {
-            case "Nama Peserta":
-              return { ...el, value: item.nama };
-            case "Deskripsi":
-              return {
-                ...el,
-                value: `atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode ${formatTanggal(
-                  item.tanggalMulai
-                )} sampai ${formatTanggal(item.tanggalSelesai)}`,
-              };
-            case "Tanggal":
-              return {
-                ...el,
-                value: `Bandar Lampung, ${formatTanggal(new Date())}`,
-              };
-            default:
-              return el;
-          }
-        }),
-      };
-
+      const filledTemplate = await res.json();
       setPreviewData(filledTemplate);
       setShowPreview(true);
     } catch (error) {
@@ -281,10 +329,10 @@ const SertifikatPage = () => {
 
               return {
                 id: data.length + index + 1,
-                nis: row?.["NIS/NPM"] || "",
+                nim: row?.["NIS/NPM"] || "",
                 nama: row?.["Nama"] || "",
                 kelas: row?.["Kelas/Semester"] || "",
-                jurusan: row?.["Jurusan"] || "",
+                prodi: row?.["Prodi"] || "",
                 sekolah: row?.["Sekolah/Perguruan Tinggi"] || "",
                 tanggalMulai: formatDate(row["Tanggal Mulai"]),
                 tanggalSelesai: formatDate(row["Tanggal Selesai"]),
@@ -304,33 +352,104 @@ const SertifikatPage = () => {
     });
   };
 
-  const handleTambahKeAkun = async (item) => {
-  try {
-    const res = await fetch("/api/user-sertifikat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        nama: item.nama,
-        nis: item.nis,
-        idMagang: item.id, // kalau pakai ID
-        tanggalMulai: item.tanggalMulai,
-        tanggalSelesai: item.tanggalSelesai,
-        lamaMagang: item.lamaMagang,
-      }),
-    });
+  //   const handleTambahKeAkun = async (item) => {
+  //   try {
+  //     const res = await fetch("/api/user-sertifikat", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         nama: item.nama,
+  //         nis: item.nis,
+  //         idMagang: item.id, // kalau pakai ID
+  //         tanggalMulai: item.tanggalMulai,
+  //         tanggalSelesai: item.tanggalSelesai,
+  //         lamaMagang: item.lamaMagang,
+  //       }),
+  //     });
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Gagal");
+  //     const result = await res.json();
+  //     if (!res.ok) throw new Error(result.message || "Gagal");
 
-    alert(`✔️ ${item.nama} berhasil ditambahkan ke akun user.`);
-  } catch (error) {
-    console.error("❌ Error:", error);
-    alert("Gagal menambahkan ke akun.");
-  }
-};
+  //     alert(`✔️ ${item.nama} berhasil ditambahkan ke akun user.`);
+  //   } catch (error) {
+  //     console.error("❌ Error:", error);
+  //     alert("Gagal menambahkan ke akun.");
+  //   }
+  // };
 
+
+  const handleTambahSertifikat = async (item) => {
+    try {
+      const res = await fetch("/api/user-sertifikat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nim: item.nim,
+          nama: item.nama,
+          idMagang: item.id,
+          tanggalMulai: item.tanggalMulai,
+          tanggalSelesai: item.tanggalSelesai,
+          lamaMagang: item.lamaMagang,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        alert(`Sertifikat berhasil ditambahkan ke ${item.nim}`);
+        setDisabledButtons((prev) => ({
+          ...prev,
+          [item.id]: true,
+        }));
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Gagal menambahkan sertifikat");
+    }
+  };
+
+  const handleVerifySertifikat = async (item) => {
+    try {
+      if (!item.userId) {
+        alert("User ID tidak ditemukan untuk peserta ini");
+        return;
+      }
+
+      const response = await fetch(`/api/intern/${item.id}/verify-sertifikat`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Sertifikat untuk ${item.nama} berhasil diverifikasi`);
+        // Update local state to reflect the change
+        setData(
+          data.map((d) =>
+            d.id === item.id ? { ...d, isSertifikatVerified: true } : d
+          )
+        );
+      } else {
+        throw new Error(result.message || "Gagal memverifikasi sertifikat");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert(`Gagal memverifikasi sertifikat: ${error.message}`);
+    }
+  };
+
+  // This was a duplicate useEffect fetch call that was causing issues - removed
+
+  // This is a duplicate of the calculateDuration function defined earlier - removing duplicate
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -430,12 +549,12 @@ const SertifikatPage = () => {
             </select>
             <select
               className="border p-2 rounded"
-              value={filters.jurusan}
+              value={filters.prodi}
               onChange={(e) =>
-                setFilters({ ...filters, jurusan: e.target.value })
+                setFilters({ ...filters, prodi: e.target.value })
               }
             >
-              <option value="">Jurusan</option>
+              <option value="">Prodi</option>
               <option value="TKJ">TKJ</option>
             </select>
             <select
@@ -483,87 +602,139 @@ const SertifikatPage = () => {
           </div>
 
           {/* Tabel Data */}
-          <div className="overflow-x-auto">
-            <table className="min-w-[2000px] border text-sm">
-              <thead className="bg-gray-200 text-left">
-                <tr>
-                  <th className="p-2">
-                    <input
-                      type="checkbox"
-                      onChange={toggleAll}
-                      checked={
-                        selectedIds.length === data.length && data.length > 0
-                      }
-                    />
-                  </th>
-                  <th className="p-2">No</th>
-                  <th className="p-2">NIS/NPM</th>
-                  <th className="p-2">Nama</th>
-                  <th className="p-2">Kelas</th>
-                  <th className="p-2">Jurusan</th>
-                  <th className="p-2">Sekolah/Perguruan Tinggi</th>
-                  <th className="p-2">Tanggal Mulai</th>
-                  <th className="p-2">Tanggal Selesai</th>
-                  <th className="p-2">Lama Magang</th>
-                  <th className="p-2">Process</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((item, index) => (
-                  <tr key={index} className="border-t">
-                    <td className="p-2">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Memuat data peserta magang...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-[1950px] border text-sm">
+                <thead className="bg-gray-200 text-left">
+                  <tr>
+                    <th className="p-2">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(item.id)}
-                        onChange={() => toggleCheckbox(item.id)}
+                        onChange={toggleAll}
+                        checked={selectedIds.length === data.length && data.length > 0}
                       />
-                    </td>
-                    <td className="p-2">{index + 1}</td>
-                    <td className="p-2">{item.nis}</td>
-                    <td className="p-2">{item.nama}</td>
-                    <td className="p-2">{item.kelas}</td>
-                    <td className="p-2">{item.jurusan}</td>
-                    <td className="p-2">{item.sekolah}</td>
-                    <td className="p-2">{item.tanggalMulai}</td>
-                    <td className="p-2">{item.tanggalSelesai}</td>
-                    <td className="p-2">{item.lamaMagang}</td>
-
-                    <td className="p-2">
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => handleCetakMagang(item)}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-xs cursor-pointer"
-                        >
-                          MAGANG/KP/PKL
-                        </button>
-
-                        <button
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-sm cursor-pointer"
-                          onClick={() => handleEditClick(item)}
-                        >
-                          EDIT
-                        </button>
-                        <button
-                          className="bg-red-600 text-white px-2 py-1 rounded text-sm cursor-pointer"
-                          onClick={() => handleDeleteClick(item.id)}
-                        >
-                          HAPUS
-                        </button>
-
-                        <button
-                          className="bg-purple-600 text-white px-2 py-1 rounded text-sm cursor-pointer"
-                          onClick={() => handleTambahKeAkun(item)}
-                        >
-                          Tambahkan ke Akun
-                        </button>
-                      </div>
-                    </td>
+                    </th>
+                    <th className="p-2">No</th>
+                    <th className="p-2">NIS/NPM</th>
+                    <th className="p-2">Nama</th>
+                    <th className="p-2">Kelas</th>
+                    <th className="p-2">Prodi</th>
+                    <th className="p-2">Sekolah/Perguruan Tinggi</th>
+                    <th className="p-2">Tanggal Mulai</th>
+                    <th className="p-2">Tanggal Selesai</th>
+                    <th className="p-2">Lama Magang</th>
+                    <th className="p-2">Status</th>
+                    <th className="p-2">Process</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredData.map((item, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="p-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleCheckbox(item.id)}
+                        />
+                      </td>
+                      <td className="p-2">{index + 1}</td>
+                      <td className="p-2">{item.nim}</td>
+                      <td className="p-2">{item.nama}</td>
+                      <td className="p-2">{item.kelas}</td>
+                      <td className="p-2">{item.prodi}</td>
+                      <td className="p-2">{item.sekolah}</td>
+                      <td className="p-2">{item.tanggalMulai}</td>
+                      <td className="p-2">{item.tanggalSelesai}</td>
+                      <td className="p-2">{item.lamaMagang}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          item.isSertifikatVerified 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {item.isSertifikatVerified ? "Terverifikasi" : "Belum Diverifikasi"}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleCetakMagang(item)}
+                            className="bg-green-600 text-white px-3 py-1 rounded text-xs cursor-pointer"
+                          >
+                            MAGANG/KP/PKL
+                          </button>
+
+                          <button
+                            className="bg-blue-500 text-white px-2 py-1 rounded text-sm cursor-pointer"
+                            onClick={() => handleEditClick(item)}
+                          >
+                            EDIT
+                          </button>
+                          <button
+                            className="bg-red-600 text-white px-2 py-1 rounded text-sm cursor-pointer"
+                            onClick={() => handleDeleteClick(item.id)}
+                          >
+                            HAPUS
+                          </button>
+
+                          <button
+                            className={`px-4 py-2 rounded text-white ${
+                              disabledButtons[item.id]
+                                ? "bg-gray-400"
+                                : "bg-blue-600 hover:bg-blue-700"
+                            }`}
+                            disabled={disabledButtons[item.id]}
+                            onClick={() => handleTambahSertifikat(item)}
+                          >
+                            {disabledButtons[item.id]
+                              ? "Sudah Ditambahkan"
+                              : "Tambah ke Akun"}
+                          </button>
+
+                          {/* Add Verification Button */}
+                          <button
+                            className={`px-3 py-1 rounded text-white ${
+                              item.isSertifikatVerified
+                                ? "bg-green-500"
+                                : "bg-purple-600 hover:bg-purple-700"
+                            }`}
+                            onClick={() => handleVerifySertifikat(item)}
+                            disabled={item.isSertifikatVerified}
+                          >
+                            {item.isSertifikatVerified ? "Terverifikasi" : "Verifikasi"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
+            <p className="text-red-700 font-medium">
+              Gagal memuat data. Silakan coba lagi nanti atau hubungi
+              administrator.
+            </p>
+            <button
+              onClick={() => {
+                setApiError(false);
+                fetchInterns();
+              }}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        )}
 
         {showPreview && previewData && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -606,10 +777,10 @@ const SertifikatPage = () => {
                   const form = e.target;
                   const newEntry = {
                     id: data.length + 1,
-                    nis: form.nis.value,
+                    nim: form.nim.value,
                     nama: form.nama.value,
                     kelas: form.kelas.value,
-                    jurusan: form.jurusan.value,
+                    prodi: form.prodi.value,
                     sekolah: form.sekolah.value,
                     tanggalMulai: form.tanggalMulai.value,
                     tanggalSelesai: form.tanggalSelesai.value,
@@ -627,14 +798,14 @@ const SertifikatPage = () => {
                 <div className="grid grid-cols-1 gap-4 mb-6">
                   <div className="space-y-1">
                     <label
-                      htmlFor="nis"
+                      htmlFor="nim"
                       className="block text-sm font-medium text-gray-700"
                     >
                       NIS/NPM
                     </label>
                     <input
-                      id="nis"
-                      name="nis"
+                      id="nim"
+                      name="nim"
                       type="text"
                       placeholder="Masukkan NIS/NPM"
                       className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
@@ -681,17 +852,18 @@ const SertifikatPage = () => {
 
                   <div className="space-y-1">
                     <label
-                      htmlFor="jurusan"
+                      htmlFor="prodi"
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Jurusan
+                      Prodi
                     </label>
                     <select
-                      id="jurusan"
-                      name="jurusan"
+                      id="prodi"
+                      name="prodi"
                       className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white cursor-pointer"
                     >
-                      <option value="">--- Pilih Jurusan ---</option>
+                      <option value="">--- Pilih Prodi ---</option>
+                      <option value="Ilmu Komputer">Ilmu Komputer</option>
                       <option value="RPL">Rekayasa Perangkat Lunak</option>
                       <option value="TKJ">Teknik Komputer dan Jaringan</option>
                       <option value="MM">Multimedia</option>
@@ -720,6 +892,21 @@ const SertifikatPage = () => {
                       className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     />
                   </div>
+
+                  {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label
+                        htmlFor="sekolah"
+                      Sekolah/Perguruan Tinggi
+                    </label>
+                    <input
+                      id="sekolah"
+                      name="sekolah"
+                      type="text"
+                      placeholder="Masukkan nama sekolah/perguruan tinggi"
+                      className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    />
+                  </div> */}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -824,10 +1011,10 @@ const SertifikatPage = () => {
                   const form = e.target;
                   const updated = {
                     ...editData,
-                    nis: form.nis.value,
+                    nim: form.nim.value,
                     nama: form.nama.value,
                     kelas: form.kelas.value,
-                    jurusan: form.jurusan.value,
+                    prodi: form.prodi.value,
                     sekolah: form.sekolah.value,
                     tanggalMulai: editTanggalMulai,
                     tanggalSelesai: editTanggalSelesai,
@@ -841,15 +1028,15 @@ const SertifikatPage = () => {
                 <div className="grid grid-cols-1 gap-4 mb-6">
                   <div className="space-y-1">
                     <label
-                      htmlFor="nis"
+                      htmlFor="nim"
                       className="block text-sm font-medium text-gray-700"
                     >
                       NIS/NPM
                     </label>
                     <input
-                      defaultValue={editData.nis}
-                      id="nis"
-                      name="nis"
+                      defaultValue={editData.nim}
+                      id="nim"
+                      name="nim"
                       type="text"
                       placeholder="Masukkan NIS/NPM"
                       required
@@ -899,19 +1086,20 @@ const SertifikatPage = () => {
 
                   <div className="space-y-1">
                     <label
-                      htmlFor="jurusan"
+                      htmlFor="prodi"
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Jurusan
+                      Prodi
                     </label>
                     <select
-                      defaultValue={editData.jurusan}
-                      id="jurusan"
-                      name="jurusan"
+                      defaultValue={editData.prodi}
+                      id="prodi"
+                      name="prodi"
                       type="text"
                       className="w-full border border-gray-300 p-3 rounded-md text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">--- Pilih Jurusan ---</option>
+                      <option value="">--- Pilih Prodi ---</option>
+                      <option value="Ilkom">Ilmu Komputer</option>
                       <option value="RPL">Rekayasa Perangkat Lunak</option>
                       <option value="TKJ">Teknik Komputer dan Jaringan</option>
                       <option value="MM">Multimedia</option>
@@ -1031,7 +1219,12 @@ const SertifikatPage = () => {
             <div className="bg-white p-6 rounded-lg max-w-sm w-full">
               <p>Yakin ingin menghapus data ini?</p>
               <div className="flex justify-end gap-2 mt-4">
-                <button onClick={() => setShowDeleteModal(false)} className="cursor-pointer">Batal</button>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="cursor-pointer"
+                >
+                  Batal
+                </button>
                 <button
                   onClick={() => {
                     setData(data.filter((d) => d.id !== deleteId));

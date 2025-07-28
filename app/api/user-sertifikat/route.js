@@ -1,39 +1,59 @@
-import { connectDB } from "@/lib/mongodb";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import mongoose from "mongoose";
 
-export async function POST(req) {
+// Definisikan schema untuk sertifikat
+const sertifikatSchema = new mongoose.Schema({
+  nim: String,
+  nama: String,
+  idMagang: String,
+  tanggalMulai: Date,
+  tanggalSelesai: Date,
+  lamaMagang: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Buat model jika belum ada
+const Sertifikat = mongoose.models.Sertifikat || mongoose.model('Sertifikat', sertifikatSchema);
+
+export async function POST(request) {
   try {
     await connectDB();
+    
+    const data = await request.json();
+    const sertifikat = await Sertifikat.create(data);
 
-    const body = await req.json();
-    const { nama, nis, idMagang, tanggalMulai, tanggalSelesai, lamaMagang } = body;
-
-    const user = await User.findOne({ nis });
-
-    if (!user) {
-      return NextResponse.json({ message: "User tidak ditemukan" }, { status: 404 });
-    }
-
-    await User.updateOne(
-      { nis },
-      {
-        $push: {
-          sertifikatMagang: {
-            idMagang,
-            nama,
-            tanggalMulai,
-            tanggalSelesai,
-            lamaMagang,
-            ditambahkanPada: new Date(),
-          },
-        },
-      }
-    );
-
-    return NextResponse.json({ message: "Berhasil ditambahkan ke akun user" }, { status: 200 });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Sertifikat berhasil ditambahkan",
+      data: sertifikat 
+    });
   } catch (error) {
-    console.error("❌ Gagal menambahkan ke akun user:", error);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    console.error("Error creating certificate:", error);
+    return NextResponse.json({ 
+      success: false, 
+      message: "Gagal menambahkan sertifikat" 
+    }, { status: 500 });
+  }
+}
+
+export async function GET(request) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const nim = searchParams.get("nim");
+
+    const sertifikat = await Sertifikat.findOne({ nim });
+
+    return NextResponse.json({
+      hasCertificate: !!sertifikat,
+      certificate: sertifikat
+    });
+  } catch (error) {
+    console.error("Error fetching certificate:", error);
+    return NextResponse.json({ 
+      hasCertificate: false,
+      message: "Gagal mengambil data sertifikat" 
+    }, { status: 500 });
   }
 }

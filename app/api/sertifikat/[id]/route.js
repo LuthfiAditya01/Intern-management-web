@@ -1,4 +1,4 @@
-import { connectDB } from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
 import Sertifikat from "@/models/Sertifikat";
 
 export default async function handler(req, res) {

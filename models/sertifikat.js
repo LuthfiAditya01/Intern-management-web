@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const SertifikatSchema = new mongoose.Schema(
   {
+    nim: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     nama: String,
     instansi: String,
     program: String,
