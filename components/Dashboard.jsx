@@ -593,27 +593,31 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   // Show regular attendance cards if no izin
-                  <div>
-                    <StatCard
-                      title="Waktu Absen Datang"
-                      value={<span className={isLate(waktuHadir) ? "text-red-500" : "text-green-400"}>{waktuHadir || "Belum absen"}</span>}
-                      icon={
-                        <img
-                          src={"/assets/image/start.png"}
-                          className={"w-[50px]"}
-                        />
-                      }
-                    />
-                    <StatCard
-                      title="Waktu Absen Pulang"
-                      value={waktuPulang || "Belum checkout"}
-                      icon={
-                        <img
-                          src={"/assets/image/finish.png"}
-                          className={"w-[50px]"}
-                        />
-                      }
-                    />
+                  <div className="flex flex-col md:flex-row gap-6 lg:col-span-2">
+                    <div className="w-full md:w-1/2">
+                      <StatCard
+                        title="Waktu Absen Datang"
+                        value={<span className={isLate(waktuHadir) ? "text-red-500" : "text-green-400"}>{waktuHadir || "Belum absen"}</span>}
+                        icon={
+                          <img
+                            src={"/assets/image/start.png"}
+                            className={"w-[50px]"}
+                          />
+                        }
+                      />
+                    </div>
+                    <div className="w-full md:w-1/2">
+                      <StatCard
+                        title="Waktu Absen Pulang"
+                        value={waktuPulang || "Belum checkout"}
+                        icon={
+                          <img
+                            src={"/assets/image/finish.png"}
+                            className={"w-[50px]"}
+                          />
+                        }
+                      />
+                    </div>
                   </div>
                 )}
                 <StatCard
