@@ -86,7 +86,6 @@ const InternCalendar = () => {
           dateMap.set(dateString, []);
         }
         dateMap.get(dateString).push(intern);
-
         currentDate.setDate(currentDate.getDate() + 1);
       }
     });
@@ -155,6 +154,14 @@ const InternCalendar = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const statusPriority = {
+    'pending': 1,
+    'aktif': 2,
+    'selesai': 3,
+    'dikeluarkan': 4
+  };
+
 
   const days = getDaysInMonth(currentDate);
 
@@ -273,6 +280,22 @@ const InternCalendar = () => {
           </div>
         </div>
 
+        {/* Legenda Pewarnaan Status Intern */}
+        <div className="flex flex-wrap items-center space-x-4 mt-2">
+          {[
+            { label: 'Aktif', className: 'bg-green-100 text-green-800' },
+            { label: 'Selesai', className: 'bg-blue-100 text-blue-800' },
+            { label: 'Dikeluarkan', className: 'bg-red-100 text-red-800' },
+            { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center space-x-2">
+              <span className={`w-4 h-4 rounded ${item.className}`}></span>
+              <span className="text-sm text-gray-600">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+
         {/* Calendar Grid */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="grid grid-cols-7 bg-gray-50 border-b">
@@ -304,16 +327,19 @@ const InternCalendar = () => {
                         </div>
                         {internsForDate.length > 0 && (
                           <div className="space-y-1">
-                            {internsForDate.slice(0, 3).map(intern => (
-                              <button
-                                key={intern._id}
-                                onClick={() => handleInternClick(intern)}
-                                className={`w-full cursor-pointer text-left p-1 text-xs ${getStatusColor(intern.status)} rounded truncate transition-colors`}
-                                title={intern.nama}
-                              >
-                                {intern.nama}
-                              </button>
-                            ))}
+                            {[...internsForDate]
+                              .sort((a, b) => (statusPriority[a.status] || 99) - (statusPriority[b.status] || 99))
+                              .slice(0, 3)
+                              .map(intern => (
+                                <button
+                                  key={intern._id}
+                                  onClick={() => handleInternClick(intern)}
+                                  className={`w-full cursor-pointer text-left p-1 text-xs ${getStatusColor(intern.status)} rounded truncate transition-colors`}
+                                  title={intern.nama}
+                                >
+                                  {intern.nama}
+                                </button>
+                              ))}
                           </div>
                         )}
                       </div>
@@ -373,7 +399,7 @@ const InternCalendar = () => {
                       { icon: Calendar, label: 'Tanggal Mulai', value: formatDate(selectedIntern.tanggalMulai) },
                       { icon: Calendar, label: 'Tanggal Selesai', value: formatDate(selectedIntern.tanggalSelesai) },
                       { icon: Building, label: 'Divisi', value: selectedIntern.divisi },
-                      { icon: User, label: 'Pembimbing', value: selectedIntern.pembimbing },
+                      { icon: User, label: 'Pembimbing', value: selectedIntern.pembimbing?.nama || '-' },
                     ].map((item, idx) => item.value && (
                       <div key={idx} className="flex items-start space-x-3">
                         <item.icon className="w-5 h-5 text-gray-500 mt-1 flex-shrink-0" />
