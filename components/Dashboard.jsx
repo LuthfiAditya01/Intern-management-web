@@ -81,7 +81,7 @@ export default function Dashboard() {
         async function fetchInterns() {
             try {
                 const res = await axios.get("/api/intern");
-                setInterns(res.data.interns);zzz
+                setInterns(res.data.interns);
             } catch (error) {
                 console.error("Failed to fetch interns:", error);
             } finally {
@@ -125,18 +125,19 @@ export default function Dashboard() {
 
     useEffect(() => {
         const checkCertificateStatus = async () => {
-            if (!userInternData || !userInternData._id) return;
+            if (!userInternData) return;
             
             try {
               // Simply check the isSertifikatVerified flag directly from userInternData
               setHasCertificate(userInternData.isSertifikatVerified === true);
+              console.log("Certificate status:", userInternData.isSertifikatVerified);
             } catch (error) {
               console.error("Error checking certificate status:", error);
               setHasCertificate(false);
             }
-          };
+        };
           
-          checkCertificateStatus();
+        checkCertificateStatus();
     }, [userInternData]);
 
 
@@ -439,14 +440,14 @@ export default function Dashboard() {
                                             <MenuCard
                                                 onClick={() => {
                                                     if (hasCertificate) {
-                                                        router.push("/sertifikatSaya");
+                                                        route.push("/sertifikatSaya");
                                                     } else {
-                                                        alert("Sertifikat belum tersedia");
+                                                        alert("Sertifikat belum tersedia atau belum diverifikasi oleh admin.");
                                                     }
                                                 }}
                                                 icon="📜"
                                                 title="Sertifikat"
-                                                description={hasCertificate ? "Lihat dan unduh sertifikatmu" : "Sertifikat belum tersedia"}
+                                                description={hasCertificate ? "Lihat dan unduh sertifikatmu" : "Sertifikat belum diverifikasi"}
                                                 color={hasCertificate ? "green" : "gray"}
                                             />
                                         </div>

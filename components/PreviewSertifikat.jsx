@@ -14,8 +14,8 @@ export default function SertifikatPreview({ template }) {
         backgroundImage: `url(${template.imageUrl})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundColor: "#ffffff", // Fallback background putih
         border: "1px solid #ccc",
-        
       }}
     >
       {/* Logo BPS dan tulisan */}
