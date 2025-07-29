@@ -10,23 +10,44 @@ export default function SertifikatPreview({ template }) {
       style={{
         width: "100%",
         maxWidth: "700px",
-        aspectRatio: "16 / 11", // Ukuran rasio landscape A4
-        backgroundImage: `url(${template.imageUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        aspectRatio: "1.420", // Ukuran rasio landscape A4
         backgroundColor: "#ffffff", // Fallback background putih
         border: "1px solid #ccc",
+        overflow: "hidden",
       }}
     >
-      {/* Logo BPS dan tulisan */}
-      <div style={{ position: "absolute", top: "15px", left: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+      {/* Gunakan <img> sebagai background agar bisa ditangkap oleh react-to-print */}
+      <img
+        src={template.imageUrl}
+        alt="Background Sertifikat"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Logo BPS dan Tulisan */}
+      <div
+        style={{
+          position: "absolute",
+          top: "15px",
+          left: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          zIndex: 1,
+        }}
+      >
         <img
           src="/uploads/logobps.png"
           alt="Logo Kiri"
           style={{
-            // top: "15px",
-            // left: "20px",
-            width: "60px", 
+            width: "60px",
             height: "auto",
           }}
         />
@@ -37,7 +58,6 @@ export default function SertifikatPreview({ template }) {
             textTransform: "uppercase",
             fontSize: "8px",
             lineHeight: "1.5",
-            left: "5px",
             marginTop: "-10px",
             marginLeft: "-3px",
           }}
@@ -46,9 +66,8 @@ export default function SertifikatPreview({ template }) {
           <div>KOTA BANDAR LAMPUNG</div>
         </div>
       </div>
-💡
 
-      {/* Logo Berakhlak  */}
+      {/* Logo Berakhlak */}
       <img
         src="/uploads/logoberakhlak.png"
         alt="Logo Kanan 1"
@@ -57,10 +76,11 @@ export default function SertifikatPreview({ template }) {
           top: "15px",
           right: "100px",
           width: "78px",
+          zIndex: 1,
         }}
       />
 
-      {/* Logo melayani bangsa */}
+      {/* Logo Melayani Bangsa */}
       <img
         src="/uploads/logomelayani.png"
         alt="Logo Kanan 2"
@@ -69,9 +89,11 @@ export default function SertifikatPreview({ template }) {
           top: "15px",
           right: "20px",
           width: "70px",
+          zIndex: 1,
         }}
       />
 
+      {/* Elemen Sertifikat */}
       {template.elements.map((el) => (
         <div
           key={el.id}
@@ -87,13 +109,14 @@ export default function SertifikatPreview({ template }) {
             whiteSpace: "pre-wrap",
             lineHeight: "1.4",
             textAlign: el.textAlign || "center",
+            zIndex: 1,
             ...(el.label === "Jabatan" && {
-              width: "190px", // Lebih kecil lagi
-              minWidth: "190px", // Tambah minWidth
-              maxWidth: "190px", // Tambah maxWidth
-              display: "block", // Ganti ke block
-              wordWrap: "break-word", // Ganti cara word wrap
-              whiteSpace: "normal", // Ganti ke normal untuk wrap otomatis
+              width: "190px",
+              minWidth: "190px",
+              maxWidth: "190px",
+              display: "block",
+              wordWrap: "break-word",
+              whiteSpace: "normal",
             }),
           }}
         >
