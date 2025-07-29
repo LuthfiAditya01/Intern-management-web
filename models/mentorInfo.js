@@ -8,6 +8,7 @@ const pembimbingSchema = new Schema({
         unique: true,
         index: true,
     },
+    
     nama: {
         type: String,
         required: [true, "Nama tidak boleh kosong"],

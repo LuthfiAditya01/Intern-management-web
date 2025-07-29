@@ -1,48 +1,94 @@
-import connectMongoDB from "./../../../../libs/mongodb";
-import Intern from "./../../../../models/internInfo";
 import { NextResponse } from "next/server";
+import { connectPostgreSQL } from "../../../../libs/postgresql.js";
+import { Intern, User, Mentor } from "../../../../models/index.js";
 
 export async function PUT(request, { params }) {
-    const { id } = params;
+    try {
+        const { id } = params;
 
-    const {
-        newNama: nama,
-        newNim: nim,
-        newNik: nik,
-        newProdi: prodi,
-        newKampus: kampus,
-        newTanggalMulai: tanggalMulai,
-        newTanggalSelesai: tanggalSelesai,
-        newDivisi: divisi,
-        newStatus: status,
-        newPembimbing: pembimbing,
-        newUserId: userId,
-        newEmail: email,
-    } = await request.json();
+        const {
+            newNama: nama,
+            newNim: nim,
+            newNik: nik,
+            newProdi: prodi,
+            newKampus: kampus,
+            newTanggalMulai: tanggalMulai,
+            newTanggalSelesai: tanggalSelesai,
+            newDivisi: divisi,
+            newStatus: status,
+            newMentorId: mentorId,
+            newUserId: userId,
+            newEmail: email,
+        } = await request.json();
 
-    await connectMongoDB();
+        await connectPostgreSQL();
 
-    await Intern.findByIdAndUpdate(id, {
-        nama,
-        nim,
-        nik,
-        prodi,
-        kampus,
-        tanggalMulai,
-        tanggalSelesai,
-        divisi,
-        status,
-        pembimbing,
-        userId,
-        email
-    });
+        const intern = await Intern.findByPk(id);
+        if (!intern) {
+            return NextResponse.json(
+                { message: "Data intern tidak ditemukan" },
+                { status: 404 }
+            );
+        }
 
-    return NextResponse.json({ message: "Data intern berhasil diperbarui" }, { status: 200 });
+        await intern.update({
+            nama,
+            nim,
+            nik,
+            prodi,
+            kampus,
+            tanggalMulai,
+            tanggalSelesai,
+            divisi,
+            status,
+            mentorId,
+            userId,
+            email
+        });
+
+        return NextResponse.json({ message: "Data intern berhasil diperbarui" }, { status: 200 });
+    } catch (error) {
+        console.error("PUT intern error:", error);
+        return NextResponse.json(
+            { message: "Gagal memperbarui data intern", error: error.message },
+            { status: 500 }
+        );
+    }
 }
 
 export async function GET(request, { params }) {
-    const { id } = params;
-    await connectMongoDB();
-    const intern = await Intern.findById(id).populate('pembimbing', 'nama');
-    return NextResponse.json({ intern }, { status: 200 });
+    try {
+        const { id } = params;
+        await connectPostgreSQL();
+        
+        const intern = await Intern.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['username', 'email', 'role']
+                },
+                {
+                    model: Mentor,
+                    as: 'mentor',
+                    attributes: ['nama', 'nip', 'divisi']
+                }
+            ]
+        });
+        
+        if (!intern) {
+            return NextResponse.json(
+                { message: "Data intern tidak ditemukan" },
+                { status: 404 }
+            );
+        }
+        
+        return NextResponse.json({ intern }, { status: 200 });
+    } catch (error) {
+        console.error("GET intern error:", error);
+        return NextResponse.json(
+            { message: "Gagal mengambil data intern", error: error.message },
+            { status: 500 }
+        );
+    }
 }

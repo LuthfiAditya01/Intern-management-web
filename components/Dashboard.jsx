@@ -17,7 +17,6 @@ const formatDate = (dateString) => {
     return `${day}-${month}-${year}`;
 };
 
-
 export default function Dashboard() {
     const [interns, setInterns] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -36,15 +35,14 @@ export default function Dashboard() {
     const [currentMentorData, setCurrentMentorData] = useState(null);
     const [menteeCount, setMenteeCount] = useState(0);
 
-
     const route = useRouter();
-
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 setUser(user);
                 const token = await user.getIdTokenResult();
+                console.log('DEBUG: Firebase Custom Claims:', token.claims);
                 const admin = token.claims.role === "admin";
                 const pembimbing = token.claims.role === "pembimbing";
                 setIsAdmin(admin);
@@ -69,9 +67,15 @@ export default function Dashboard() {
         async function fetchMentors() {
             try {
                 const res = await axios.get("/api/mentor");
-                setMentor(res.data);
+                // Handle both old and new response formats
+                const mentorData = res.data.mentors || res.data || [];
+                setMentor(mentorData);
             } catch (error) {
                 console.error("Failed to fetch mentors:", error);
+                if (error.response) {
+                    console.error("Error response:", error.response.data);
+                }
+                setMentor([]); // Set empty array as fallback
             } finally {
                 setLoading(false);
             }
@@ -81,12 +85,14 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (user && interns && interns.length > 0) {
-            const me = interns.find((i) => i.userId === user.uid);
+            // Find intern by user ID (PostgreSQL structure)
+            const me = interns.find((i) => i.user?.email === user.email);
             if (me) {
                 setUserInternData(me);
                 setUserStatus(me.status ?? "pending");
                 setUserDivision(me.divisi ?? "-");
-                setUserMentor(me.pembimbing?.nama ?? "-");
+                // Update mentor reference for PostgreSQL structure
+                setUserMentor(me.mentor?.nama ?? me.pembimbing?.nama ?? "-");
                 setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
             }
         }
@@ -94,7 +100,8 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (user && mentor && mentor.length > 0) {
-            const me = mentor.find((m) => m.userId === user.uid);
+            // Find mentor by user ID (PostgreSQL structure)
+            const me = mentor.find((m) => m.userId === user.uid || m.user?.id === user.uid);
             if (me) {
                 setCurrentMentorData(me);
             }
@@ -103,16 +110,16 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (isPembimbing && currentMentorData && interns.length > 0) {
+            // Update mentor reference for PostgreSQL structure
             const activeMentees = interns.filter(
-                (interns) =>
-                    interns.pembimbing?._id === currentMentorData._id &&
-                    interns.status === "aktif"
+                (intern) =>
+                    (intern.mentor?.id === currentMentorData.id || intern.pembimbing?._id === currentMentorData._id) &&
+                    intern.status === "aktif"
             ).length;
 
             setMenteeCount(activeMentees);
         }
     }, [isPembimbing, currentMentorData, interns]);
-
 
     useEffect(() => {
         async function fetchInterns() {
@@ -128,41 +135,26 @@ export default function Dashboard() {
         fetchInterns();
     }, []);
 
-
-    // useEffect(() => {
-    //     const fetchInterns = async () => {
-    //         try {
-    //             const res = await fetch("api/intern", {
-    //                 cache: 'no-store',
-    //             });
-
-    //             if (!res.ok) {
-    //                 throw new Error("Failed to fetch data");
-    //             }
-
-    //             const data = await res.json();
-    //             setInterns(data.interns);
-    //         } catch (error) {
-    //             console.log("Error loading data: ", error);
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     }
-
-    //     fetchInterns();
-    // }, []);
-
     useEffect(() => {
         const fetchGrade = async () => {
             if (!userInternData) return;
 
             try {
                 const res = await axios.get(
-                    `/api/assessment?internId=${userInternData._id}`
+                    `/api/assessment?internId=${userInternData.id || userInternData._id}`
                 );
 
                 if (res.data.success && res.data.assessments.length > 0) {
-                    const aspek = res.data.assessments[0].aspekNilai;
+                    const assessment = res.data.assessments[0];
+                    // Handle both old and new assessment structure
+                    const aspek = assessment.aspekNilai || {
+                        komunikasi: assessment.komunikasi,
+                        kerjaTim: assessment.kerjaTim,
+                        kedisiplinan: assessment.kedisiplinan,
+                        inisiatif: assessment.inisiatif,
+                        tanggungJawab: assessment.tanggungJawab
+                    };
+                    
                     const numbers = Object.values(aspek).filter(
                         (v) => typeof v === "number" && v >= 0
                     );
@@ -183,7 +175,6 @@ export default function Dashboard() {
 
         fetchGrade();
     }, [userInternData]);
-
 
     const activeCount = interns.filter((i) => i.status === "aktif").length;
     const mostCommonDivisi = interns.length

@@ -40,11 +40,36 @@ export default function Login() {
     const [sendingReset, setSendingReset] = useState(false);
     const router = useRouter();
 
+
+    
+    
     const [signInWithEmailAndPassword, user, loading, signInErr] =
         useSignInWithEmailAndPassword(auth);
     const [createUserWithEmailAndPassword, newUser, creating, signUpErr] =
         useCreateUserWithEmailAndPassword(auth);
 
+        useEffect(() => {
+    const handleUserLogin = async () => {
+        if (user && !loading && !signInErr) {
+            setIsLoading(true); // Tampilkan loading spinner
+            try {
+                // Panggil fungsi sinkronisasi setelah login firebase berhasil
+                const appUser = await syncUserWithBackend(user.user);
+                console.log('Sinkronisasi berhasil. Role pengguna:', appUser.role);
+                // Arahkan ke dashboard setelah sinkronisasi selesai
+                router.push('/dashboard');
+            } catch (err) {
+                // Tangkap error dari fungsi sinkronisasi
+                setError(err.message || "Gagal memverifikasi data pengguna di server.");
+                setIsLoading(false);
+            }
+        }
+    };
+
+    handleUserLogin();
+}, [user, loading, signInErr, router]); // Dijalankan setiap kali 'user' berubah
+
+        
     const checkNikExists = async (nik) => {
         try {
             const response = await fetch(`/api/check-nik?nik=${nik}`);
@@ -70,6 +95,40 @@ export default function Login() {
             }
         }
     };
+
+    // ... di dalam komponen Login Anda
+
+const syncUserWithBackend = async (firebaseUser) => {
+    try {
+        const idToken = await firebaseUser.getIdToken(); // Ambil token untuk otentikasi
+        const response = await fetch('/api/auth/sync-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Kirim token ke backend agar backend tahu ini permintaan yang sah
+                'Authorization': `Bearer ${idToken}`, 
+            },
+            body: JSON.stringify({
+                firebaseUid: firebaseUser.uid,
+                email: firebaseUser.email,
+                username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            }),
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Gagal sinkronisasi pengguna dengan backend.');
+        }
+
+        const { user: appUser } = await response.json();
+        return appUser; // Mengembalikan data user dari PostgreSQL (termasuk role)
+
+    } catch (syncError) {
+        console.error('Sync error:', syncError);
+        await auth.signOut(); // Jika sinkronisasi gagal, logout pengguna
+        throw syncError;
+    }
+};
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -121,14 +180,9 @@ export default function Login() {
         }
     };
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                router.push('/dashboard');
-            }
-        });
-        return () => unsubscribe();
-    }, [router]);
+    // ... di dalam komponen Login Anda setelah semua useState
+
+
 
 
     const handleForgotPassword = async () => {

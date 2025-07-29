@@ -1,16 +1,31 @@
-import Intern from "./../../../models/internInfo";
-import connectMongoDB from "./../../../libs/mongodb";
 import { NextResponse } from "next/server";
+import { connectPostgreSQL } from "../../../libs/postgresql.js";
+import { Intern, User, Mentor } from "../../../models/index.js";
+import { Op } from 'sequelize';
 
 export async function GET(request) {
     try {
-        await connectMongoDB();
+        await connectPostgreSQL();
 
         const { searchParams } = new URL(request.url);
         const month = searchParams.get("month");
 
         if (!month) {
-            const interns = await Intern.find().populate('pembimbing', 'nama');
+            const interns = await Intern.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['username', 'email', 'role']
+                    },
+                    {
+                        model: Mentor,
+                        as: 'mentor',
+                        attributes: ['nama', 'nip', 'divisi']
+                    }
+                ],
+                order: [['nama', 'ASC']]
+            });
             return NextResponse.json({ interns });
         }
 
@@ -18,12 +33,25 @@ export async function GET(request) {
         const startOfMonth = new Date(year, mon - 1, 1);
         const endOfMonth = new Date(year, mon, 0, 23, 59, 59, 999);
 
-        const interns = await Intern.find({
-            tanggalMulai: { $lte: endOfMonth },
-            tanggalSelesai: { $gte: startOfMonth },
-        })
-            .populate('pembimbing')
-            .sort({ nama: 1 });
+        const interns = await Intern.findAll({
+            where: {
+                tanggalMulai: { [Op.lte]: endOfMonth },
+                tanggalSelesai: { [Op.gte]: startOfMonth },
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['username', 'email', 'role']
+                },
+                {
+                    model: Mentor,
+                    as: 'mentor',
+                    attributes: ['nama', 'nip', 'divisi']
+                }
+            ],
+            order: [['nama', 'ASC']]
+        });
 
         return NextResponse.json({ interns });
     } catch (error) {
@@ -37,60 +65,47 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
+        await connectPostgreSQL();
         const body = await request.json();
-
-        console.log("Received data:", body);
-
         const {
             nama, nim, nik, prodi, kampus,
-            tanggalMulai, tanggalSelesai,
-            divisi, status, pembimbing, userId, email,
-            createdAt
+            tanggalMulai, tanggalSelesai, userId, email
         } = body;
 
+        // ... (Validasi input Anda sudah bagus) ...
         if (!nama || !nim || !nik || !prodi || !kampus || !tanggalMulai || !tanggalSelesai || !userId || !email) {
-            return NextResponse.json(
-                { message: "Semua field wajib harus diisi" },
-                { status: 400 }
-            );
+            return NextResponse.json({ message: "Semua field wajib harus diisi" }, { status: 400 });
         }
-
         const startDate = new Date(tanggalMulai);
         const endDate = new Date(tanggalSelesai);
-
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-            return NextResponse.json(
-                { message: "Format tanggal tidak valid" },
-                { status: 400 }
-            );
-        }
-
         if (startDate >= endDate) {
-            return NextResponse.json(
-                { message: "Tanggal mulai harus lebih awal dari tanggal selesai" },
-                { status: 400 }
-            );
+            return NextResponse.json({ message: "Tanggal mulai harus lebih awal dari tanggal selesai" }, { status: 400 });
         }
 
-        await connectMongoDB();
+        // 1. CARI atau BUAT record User (ini sudah bekerja dengan baik)
+        const [user, created] = await User.findOrCreate({
+            where: { firebaseUid: userId },
+            defaults: {
+                firebaseUid: userId,
+                email: email,
+                username: nama,
+                role: 'intern',
+            }
+        });
 
-        const existingNik = await Intern.findOne({ nik });
-        if (existingNik) {
+        // 2. Cek apakah pengguna ini sudah terdaftar sebagai intern
+        const existingIntern = await Intern.findOne({ where: { userId: user.id } });
+        if (existingIntern) {
             return NextResponse.json(
-                { message: "NIK sudah terdaftar, silakan gunakan NIK lain." },
+                { message: "Anda sudah terdaftar sebagai peserta magang." },
                 { status: 409 }
             );
         }
 
-        const existingUserId = await Intern.findOne({ userId });
-        if (existingUserId) {
-            return NextResponse.json(
-                { message: "User sudah terdaftar sebagai intern." },
-                { status: 409 }
-            );
-        }
-
-        const internData = {
+        // 3. BUAT record Intern (INI BAGIAN YANG DIPERBAIKI)
+        const newIntern = await Intern.create({
+            userId: user.id,
+            email: email, // <-- TAMBAHKAN BARIS INI
             nama,
             nim,
             nik,
@@ -98,74 +113,29 @@ export async function POST(request) {
             kampus,
             tanggalMulai: startDate,
             tanggalSelesai: endDate,
-            divisi: divisi || "-",
-            status: status || "pending",
-            pembimbing: null,
-            userId,
-            email,
-            createdAt: createdAt ? new Date(createdAt) : new Date()
-        };
-
-        console.log("Creating intern with data:", internData);
-
-        const newIntern = await Intern.create(internData);
-
-        console.log("Intern created successfully:", newIntern);
-
-        return NextResponse.json(
-            {
-                message: "Data intern berhasil ditambahkan",
-                intern: newIntern
-            },
-            { status: 201 }
-        );
+            status: 'pending',
+            divisi: '-'
+        });
+        
+        return NextResponse.json({
+            message: "Pendaftaran berhasil",
+            intern: newIntern
+        }, { status: 201 });
 
     } catch (error) {
+        // ... (Error handling Anda yang lain sudah bagus) ...
         console.error("POST Error details:", error);
-
-        if (error.code === 11000) {
-            const duplicateField = Object.keys(error.keyValue)[0];
-            const fieldName = duplicateField === 'nik' ? 'NIK' :
-                duplicateField === 'nim' ? 'NIM' :
-                    duplicateField === 'email' ? 'Email' :
-                        duplicateField.charAt(0).toUpperCase() + duplicateField.slice(1);
-
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            const field = error.errors[0].path;
             return NextResponse.json(
-                { message: `${fieldName} yang Anda masukkan sudah terdaftar.` },
+                { message: `${field.charAt(0).toUpperCase() + field.slice(1)} yang Anda masukkan sudah terdaftar.` },
                 { status: 409 }
             );
         }
-
-        if (error.name === 'ValidationError') {
-            const validationErrors = Object.values(error.errors).map(err => err.message);
-            return NextResponse.json(
-                {
-                    message: "Data tidak valid",
-                    errors: validationErrors,
-                    details: error.message
-                },
-                { status: 400 }
-            );
-        }
-
-        if (error.name === 'CastError') {
-            return NextResponse.json(
-                {
-                    message: `Format data tidak valid untuk field ${error.path}`,
-                    details: error.message
-                },
-                { status: 400 }
-            );
-        }
-
-        return NextResponse.json(
-            {
-                message: "Terjadi kesalahan pada server.",
-                error: error.message,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-            },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            message: "Terjadi kesalahan pada server.",
+            error: error.message
+        }, { status: 500 });
     }
 }
 
@@ -180,16 +150,17 @@ export async function DELETE(request) {
             );
         }
 
-        await connectMongoDB();
+        await connectPostgreSQL();
 
-        const deletedIntern = await Intern.findByIdAndDelete(id);
-
+        const deletedIntern = await Intern.findByPk(id);
         if (!deletedIntern) {
             return NextResponse.json(
                 { message: "Data intern tidak ditemukan" },
                 { status: 404 }
             );
         }
+
+        await deletedIntern.destroy();
 
         return NextResponse.json(
             { message: "Data intern berhasil dihapus" },

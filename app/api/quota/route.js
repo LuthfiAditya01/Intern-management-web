@@ -1,28 +1,60 @@
-// pages/api/kuota.js
-import Kuota from '@/models/kuota'; // Pastikan path model Kuota benar // Asumsi Anda punya file koneksi DB
-import connectMongoDB from '@/libs/mongodb';
+import { NextResponse } from "next/server";
+import { connectPostgreSQL } from "../../../libs/postgresql.js";
+import { Quota } from "../../../models/index.js";
 
-export default async function handler(req, res) {
-    if (req.method !== 'PUT') { // GANTI DI SINI
-        return res.status(405).json({ message: 'Method Not Allowed' });
-    }
-
-    await connectMongoDB(); // Hubungkan ke database
-
-    const { bulan, tahun, jumlahKuota } = req.body;
-
-    if (!bulan || !tahun || jumlahKuota === undefined) {
-        return res.status(400).json({ message: 'Data tidak lengkap' });
-    }
-
+export async function PUT(request) {
     try {
-        const updatedKuota = await Kuota.findOneAndUpdate(
-            { bulan, tahun },
-            { jumlahKuota },
-            { new: true, upsert: true, runValidators: true }
-        );
-        return res.status(200).json(updatedKuota);
+        await connectPostgreSQL();
+        const { bulan, tahun, jumlahKuota } = await request.json();
+
+        if (!bulan || !tahun || jumlahKuota === undefined) {
+            return NextResponse.json(
+                { message: 'Data tidak lengkap' },
+                { status: 400 }
+            );
+        }
+
+        const [updatedQuota, created] = await Quota.upsert({
+            bulan,
+            tahun,
+            jumlahKuota
+        }, {
+            returning: true
+        });
+
+        return NextResponse.json(updatedQuota);
     } catch (error) {
-        return res.status(500).json({ message: 'Server Error', error: error.message });
+        console.error("PUT quota error:", error);
+        return NextResponse.json(
+            { message: 'Server Error', error: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+export async function GET(request) {
+    try {
+        await connectPostgreSQL();
+        const { searchParams } = new URL(request.url);
+        const bulan = searchParams.get("bulan");
+        const tahun = searchParams.get("tahun");
+
+        let whereClause = {};
+        if (bulan && tahun) {
+            whereClause = { bulan: parseInt(bulan), tahun: parseInt(tahun) };
+        }
+
+        const quotas = await Quota.findAll({
+            where: whereClause,
+            order: [['tahun', 'DESC'], ['bulan', 'ASC']]
+        });
+
+        return NextResponse.json({ quotas });
+    } catch (error) {
+        console.error("GET quota error:", error);
+        return NextResponse.json(
+            { message: 'Server Error', error: error.message },
+            { status: 500 }
+        );
     }
 }

@@ -1,11 +1,11 @@
-// Contoh di dalam file API route (misal: pages/api/status-kuota.js)
-import connectMongoDB from '@/libs/mongodb';
-import Intern from '@/models/internInfo';
-import Kuota from '@/models/kuota';
+import { NextResponse } from "next/server";
+import { connectPostgreSQL } from "../../../libs/postgresql.js";
+import { Intern, Quota } from "../../../models/index.js";
+import { Op } from 'sequelize';
 
 export async function GET() {
-    await connectMongoDB();
     try {
+        await connectPostgreSQL();
         const now = new Date();
         const currentYear = now.getFullYear(); // 2025
         const currentMonth = now.getMonth() + 1; // 7 (karena getMonth() 0-11)
@@ -15,24 +15,32 @@ export async function GET() {
         const endOfMonth = new Date(currentYear, currentMonth, 0); // Trik JS: hari ke-0 bulan berikutnya adalah hari terakhir bulan ini
 
         // 2. Cari kuota yang ditetapkan untuk bulan ini
-        const kuotaBulanIni = await Kuota.findOne({ bulan: currentMonth, tahun: currentYear });
+        const kuotaBulanIni = await Quota.findOne({
+            where: { bulan: currentMonth, tahun: currentYear }
+        });
         const kuotaMaksimal = kuotaBulanIni ? kuotaBulanIni.jumlahKuota : 0;
 
         // 3. Hitung jumlah intern yang aktif di bulan ini
-        const jumlahSekarang = await Intern.countDocuments({
-            status: 'aktif',
-            tanggalMulai: { $lte: endOfMonth },
-            tanggalSelesai: { $gte: startOfMonth }
+        const jumlahSekarang = await Intern.count({
+            where: {
+                status: 'aktif',
+                tanggalMulai: { [Op.lte]: endOfMonth },
+                tanggalSelesai: { [Op.gte]: startOfMonth }
+            }
         });
 
         // 4. Kirim hasilnya
-        return new Response(JSON.stringify({
+        return NextResponse.json({
             kuotaMaksimal,
             jumlahSekarang,
             sisaKuota: kuotaMaksimal - jumlahSekarang
-        }), { status: 200 });
+        });
 
     } catch (error) {
-        return new Response(JSON.stringify({ message: 'Server Error' }), { status: 500 });
+        console.error("GET status-kuota error:", error);
+        return NextResponse.json(
+            { message: 'Server Error', error: error.message },
+            { status: 500 }
+        );
     }
 }

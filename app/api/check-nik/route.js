@@ -1,10 +1,10 @@
-import Intern from "../../../models/internInfo";
-import connectMongoDB from "../../../libs/mongodb";
 import { NextResponse } from "next/server";
+import { connectPostgreSQL } from "../../../libs/postgresql.js";
+import { Intern } from "../../../models/index.js";
 
 export async function GET(request) {
     try {
-        await connectMongoDB();
+        await connectPostgreSQL();
 
         const { searchParams } = new URL(request.url);
         const nik = searchParams.get('nik');
@@ -13,7 +13,7 @@ export async function GET(request) {
             return NextResponse.json({ error: 'NIK is required' }, { status: 400 });
         }
 
-        const existingIntern = await Intern.findOne({ nik });
+        const existingIntern = await Intern.findOne({ where: { nik } });
 
         return NextResponse.json({ exists: !!existingIntern });
     } catch (error) {
