@@ -19,7 +19,7 @@ const IzinScheme = new Schema({
     },
     linkBukti: {
         type: String,
-        required: true
+        required: false
     }
 },{
     timestamps: true

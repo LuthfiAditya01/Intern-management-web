@@ -16,6 +16,10 @@ export default function DaftarHadirTable() {
   const [nullLength, setNullLength] = useState(false);
   const [latCenter, setLatCenter] = useState(null);
   const [longCenter, setLongCenter] = useState(null);
+  const [internList, setInternList] = useState([]);
+  const [selectedIntern, setSelectedIntern] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // "list" or "attendance"
+  const [userInternData, setUserInternData] = useState(null);
 
   // Handler untuk mengambil lokasi pusat yang ditentukan admin
   useEffect(() => {
@@ -33,88 +37,82 @@ export default function DaftarHadirTable() {
 
     loadCurrentSettings();
   }, []);
-  // const [daftarHadir, setDaftarHadir] = useState(null);
-  // setLoading(true);
-  // useEffect(() => {
-  //   const unsubscribe = onAuthStateChanged(auth, async (user) => {
-  //     if (user) {
-  //       setUser(user);
-  //       const token = await user.getIdTokenResult();
-  //       const admin = token.claims.role === "admin";
-  //       setIsAdmin(admin);
-  //       if (token.claims.role === "admin") {
-  //         console.log("👑 Ini admin");
-  //       } else {
-  //         console.log("🙅‍♂️ Bukan admin");
-  //       }
-  //     }
-  //   });
 
-  //   return () => unsubscribe();
-  // }, []);
-
+  // Auth state dan role management
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        const token = await user.getIdTokenResult();
-        console.log(token);
-        setUserId(token.claims.user_id);
-        setRole(token.claims.role);
-        console.log("Ini adalah hasil dari token ", token);
+        try {
+          const token = await user.getIdTokenResult();
+          setUserId(token.claims.user_id);
+          setRole(token.claims.role);
+          
+          // Log role status
+          if (token.claims.role === "admin") {
+            console.log("👑 Ini admin");
+            // Fetch list of interns if admin
+            fetchInternList();
+          } else {
+            console.log("🙅‍♂️ Bukan admin");
+          }
+        } catch (error) {
+          console.error("Error getting token:", error);
+        }
       }
     });
-
-    {
-      /* 
-      {
-    "claims": {
-        "iss": "https://securetoken.google.com/user-auth-bps",
-        "aud": "user-auth-bps",
-        "auth_time": 1752749854,
-        "user_id": "sRUfilsuJIXeOo8ovYcnqXz8fWL2",
-        "sub": "sRUfilsuJIXeOo8ovYcnqXz8fWL2",
-        "iat": 1752760585,
-        "exp": 1752764185,
-        "email": "adit@gmail.com",
-        "email_verified": false,
-        "firebase": {
-            "identities": {
-                "email": [
-                    "adit@gmail.com"
-                ]
-            },
-            "sign_in_provider": "password"
-        }
-    },
-    "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImE4ZGY2MmQzYTBhNDRlM2RmY2RjYWZjNmRhMTM4Mzc3NDU5ZjliMDEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vdXNlci1hdXRoLWJwcyIsImF1ZCI6InVzZXItYXV0aC1icHMiLCJhdXRoX3RpbWUiOjE3NTI3NDk4NTQsInVzZXJfaWQiOiJzUlVmaWxzdUpJWGVPbzhvdlljbnFYejhmV0wyIiwic3ViIjoic1JVZmlsc3VKSVhlT284b3ZZY25xWHo4ZldMMiIsImlhdCI6MTc1Mjc2MDU4NSwiZXhwIjoxNzUyNzY0MTg1LCJlbWFpbCI6ImFkaXRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImFkaXRAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.T1qZakpz8oFKv7tk-lLKlnqiU-DcUx4ucsckqmTipMrlx_foQIg5ry0tYDyb609LJTEb00djv4fSU4pIcMbfQgoY8RdU0ygrv9XHJveHI-mR9gkGmAPuF4F19YvySAOb21E2-edgfGkL7vc7iLg1zdYaUPanwV5dcezgeC4Cour0pBcjoqCwoGwJZLyoSwCY4k2s-UO38dpSRtIecqIeUJRaxML4OIIIZzgAvqaW03Xekd3L8J1SegacO1Xy8420cRbRERfJX5nNDZYIbUoflprY6lw1J2Q20Ou67o63kQUk5yR1Vbd4S-Mscbk7Qz2mKrmgOokcOwPwFb9DXdGOGw",
-    "authTime": "Thu, 17 Jul 2025 10:57:34 GMT",
-    "issuedAtTime": "Thu, 17 Jul 2025 13:56:25 GMT",
-    "expirationTime": "Thu, 17 Jul 2025 14:56:25 GMT",
-    "signInProvider": "password",
-    "signInSecondFactor": null
-}
-      */
-    }
 
     return () => unsubscribe();
   }, []);
 
+  // Fetch list of all interns (for admin)
+  const fetchInternList = async () => {
+    try {
+      const response = await axios.get("/api/intern");
+      if (response.data && response.data.interns) {
+        setInternList(response.data.interns);
+      }
+    } catch (error) {
+      console.error("Error fetching intern list:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch attendance data for a specific intern
+  const fetchAttendanceForIntern = async (internId) => {
+    setIsLoading(true);
+    try {
+      const url = "/api/absen";
+      const config = { params: { userId: internId } };
+      
+      console.log(`Fetching attendance data for intern ID: ${internId}`);
+      
+      const response = await axios.get(url, config);
+      setData(response.data.absensi?.length ? response.data : setNullLength(true));
+      setViewMode("attendance");
+    } catch (err) {
+      console.error("Fetch attendance error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch attendance data for regular users
   useEffect(() => {
-    if (!userId || role === null) return; // early guard
+    if (!userId || role === null || role === "admin") return; // skip for admins, they use different flow
 
     const fetchAll = async () => {
       try {
         const url = "/api/absen";
-        const config = role === "admin" ? {} : { params: { userId } };
+        const config = { params: { userId } };
 
-        console.log(role === "admin" ? "Fetching semua data (admin)…" : `Fetching data untuk user ${userId}…`);
+        console.log(`Fetching data untuk user ${userId}…`);
 
         const response = await axios.get(url, config);
         setData(response.data.absensi?.length ? response.data : setNullLength(true));
       } catch (err) {
         console.error("Fetch error:", err);
-        // Bisa tambahin UI toast/error banner di sini
       } finally {
         setIsLoading(false);
       }
@@ -123,132 +121,364 @@ export default function DaftarHadirTable() {
     fetchAll();
   }, [userId, role]);
 
-  // // Dummy data untuk daftar hadir
-  // const daftarHadirData = [
-  //   {
-  //     tanggal: "01/06/2023",
-  //     waktuPengisian: "08:00",
-  //     latitude: "-6.175392",
-  //     longitude: "106.827153",
-  //     jarakDariPusat: "5 meter",
-  //     keteranganMasuk: "Tepat Waktu",
-  //     kegiatan: "Meeting dengan Tim IT",
-  //   },
-  //   {
-  //     tanggal: "02/06/2023",
-  //     waktuPengisian: "07:45",
-  //     latitude: "-6.175401",
-  //     longitude: "106.827160",
-  //     jarakDariPusat: "7 meter",
-  //     keteranganMasuk: "Tepat Waktu",
-  //     kegiatan: "Pengembangan Aplikasi Mobile",
-  //   },
-  //   {
-  //     tanggal: "05/06/2023",
-  //     waktuPengisian: "08:15",
-  //     latitude: "-6.175385",
-  //     longitude: "106.827148",
-  //     jarakDariPusat: "10 meter",
-  //     keteranganMasuk: "Terlambat",
-  //     kegiatan: "Maintenance Database",
-  //   },
-  //   {
-  //     tanggal: "06/06/2023",
-  //     waktuPengisian: "07:50",
-  //     latitude: "-6.175390",
-  //     longitude: "106.827155",
-  //     jarakDariPusat: "4 meter",
-  //     keteranganMasuk: "Tepat Waktu",
-  //     kegiatan: "Pengujian Sistem",
-  //   },
-  //   {
-  //     tanggal: "07/06/2023",
-  //     waktuPengisian: "08:05",
-  //     latitude: "-6.175395",
-  //     longitude: "106.827150",
-  //     jarakDariPusat: "8 meter",
-  //     keteranganMasuk: "Tepat Waktu",
-  //     kegiatan: "Pembuatan Laporan Mingguan",
-  //   },
-  // ];
-  {
-    /*
-      longitude : -5.4282987
-      latitude : 105.2734644,21
-        return (
-    <div className="w-full overflow-x-auto">
-      {!data.absensi ? (
-        const [isLoading, setIsLoading] = useState(true);
+  // Fetch user intern data for regular users
+  useEffect(() => {
+    if (!userId || role === null || role === "admin") return; // skip for admins
 
-      */
-  }
-  return (
-    <div className="w-full overflow-x-auto">
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
-        </div>
-      ) : nullLength ? (
-        <div className="flex justify-center items-center min-h-screen">
-          <h1>Anda belum memiliki riwayat daftar hadir sama sekali</h1>
-        </div>
-      ) : (
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`/api/intern?email=${user.email}`);
+        if (response.data && response.data.interns && response.data.interns.length > 0) {
+          setUserInternData(response.data.interns[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    if (user && user.email) {
+      fetchUserData();
+    }
+  }, [userId, role, user]);
+
+  // For back button in attendance view
+  const goBackToInternList = () => {
+    setViewMode("list");
+    setSelectedIntern(null);
+  };
+
+  // Render admin intern list view
+  const renderInternList = () => {
+    if (internList.length === 0) {
+      return <div className="text-center py-6">Tidak ada data anak magang yang tersedia</div>;
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <h2 className="text-xl font-bold mb-4">Daftar Anak Magang</h2>
         <table className="w-full bg-white border border-gray-200 rounded-lg shadow-md">
           <thead>
             <tr className="bg-gray-100">
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Tanggal</th>
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Nama</th>
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Waktu Pengisian</th>
-              {/* <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Titik Latitude</th>
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Titik Longitude</th> */}
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Jarak dari Titik Pusat</th>
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Keterangan Masuk</th>
-              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Kegiatan</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">NIM</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Kampus</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Divisi</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Periode</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {data.absensi.map((item, index) => {
-              const absenDate = new Date(item.absenDate);
-              const date = absenDate.getDate();
-              const month = absenDate.getMonth();
-              const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-              const year = absenDate.getFullYear();
-              const hours = absenDate.getHours().toString().padStart(2, "0");
-              const minute = absenDate.getMinutes().toString().padStart(2, "0");
-              let distance = "Tidak tersedia";
-              if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
-                const userLoc = {
-                  latitude: parseFloat(item.latCordinate),
-                  longitude: parseFloat(item.longCordinate),
-                };
-                const centerLoc = {
-                  latitude: parseFloat(latCenter),
-                  longitude: parseFloat(longCenter),
-                };
-                try {
-                  distance = `${getPreciseDistance(userLoc, centerLoc)} meter`;
-                } catch (error) {
-                  console.error("Error calculating distance:", error);
-                  distance = "Error kalkulasi";
-                }
-              }
+            {internList.map((intern, index) => {
+              const startDate = new Date(intern.tanggalMulai).toLocaleDateString('id-ID');
+              const endDate = new Date(intern.tanggalSelesai).toLocaleDateString('id-ID');
+              
               return (
                 <tr
-                  key={index}
+                  key={intern._id}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}` || "Tanggal Tidak Tersedia"}</td>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.nama || "Nama tidak tersedia "}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${hours}:${minute}` || "Waktu Tidak Tersedia"}</td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.latCordinate || "Kordinat Latitude Tidak Tersedia"}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.longCordinate || "Kordinat Longitude Tidak Tersedia"}</td> */}
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${distance} meter` || "Jarak dari Titik ke Pusat Tidak Tersedia"}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "Keterangan Masuk tidak ada"}</td>
-                  <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "Deskripsi Kegiatan Tidak ditemukan"}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{intern.nama}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{intern.nim}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{intern.kampus}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{intern.divisi || "-"}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{`${startDate} s/d ${endDate}`}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      intern.status === 'aktif' ? 'bg-green-100 text-green-800' : 
+                      intern.status === 'selesai' ? 'bg-blue-100 text-blue-800' :
+                      intern.status === 'dikeluarkan' ? 'bg-red-100 text-red-800' : 
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {intern.status.charAt(0).toUpperCase() + intern.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <button
+                      onClick={() => {
+                        setSelectedIntern(intern);
+                        fetchAttendanceForIntern(intern.userId);
+                      }}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Lihat Absensi
+                    </button>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  // Modify renderAttendanceTable function
+  const renderAttendanceTable = () => {
+    return (
+      <>
+        {selectedIntern && (
+          <div className="mb-6">
+            <button 
+              onClick={goBackToInternList}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mb-4 flex items-center"
+            >
+              <span className="mr-2">←</span> Kembali ke Daftar Anak Magang
+            </button>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h2 className="text-xl font-bold mb-2">Data Absensi: {selectedIntern.nama}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">NIM</p>
+                  <p className="font-medium">{selectedIntern.nim}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Divisi</p>
+                  <p className="font-medium">{selectedIntern.divisi || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="font-medium capitalize">{selectedIntern.status}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {nullLength ? (
+          <div className="flex justify-center items-center p-8 bg-white rounded-lg shadow min-h-[300px] w-full">
+            <p className="text-lg">Anak magang ini belum memiliki riwayat absensi</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+            <table className="w-full min-w-[1200px] bg-white">
+              <thead className="sticky top-0">
+                <tr className="bg-gray-100">
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Tanggal</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jam Absen Masuk</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jarak Masuk</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Pesan Masuk</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jam Absen Pulang</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jarak Pulang</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Pesan Pulang</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Keterangan Masuk</th>
+                  <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Keterangan Pulang</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.absensi.map((item, index) => {
+                  const absenDate = new Date(item.absenDate);
+                  const date = absenDate.getDate();
+                  const month = absenDate.getMonth();
+                  const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                  const year = absenDate.getFullYear();
+                  
+                  // Format waktu absen masuk
+                  const jamMasuk = item.waktuDatang ? item.waktuDatang : `${absenDate.getHours().toString().padStart(2, "0")}:${absenDate.getMinutes().toString().padStart(2, "0")}`;
+                  
+                  // Format waktu absen pulang
+                  const jamPulang = item.waktuPulang || "-";
+                  
+                  // Format jarak saat masuk
+                  let jarakMasuk = "Tidak tersedia";
+                  if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
+                    const userLoc = {
+                      latitude: parseFloat(item.latCordinate),
+                      longitude: parseFloat(item.longCordinate),
+                    };
+                    const centerLoc = {
+                      latitude: parseFloat(latCenter),
+                      longitude: parseFloat(longCenter),
+                    };
+                    try {
+                      jarakMasuk = `${getPreciseDistance(userLoc, centerLoc)} meter`;
+                    } catch (error) {
+                      console.error("Error calculating distance:", error);
+                      jarakMasuk = "Error kalkulasi";
+                    }
+                  }
+                  
+                  // Format jarak saat pulang
+                  let jarakPulang = "Tidak tersedia";
+                  if (item.latPulang && item.longPulang && latCenter && longCenter) {
+                    const userLoc = {
+                      latitude: parseFloat(item.latPulang),
+                      longitude: parseFloat(item.longPulang),
+                    };
+                    const centerLoc = {
+                      latitude: parseFloat(latCenter),
+                      longitude: parseFloat(longCenter),
+                    };
+                    try {
+                      jarakPulang = `${getPreciseDistance(userLoc, centerLoc)} meter`;
+                    } catch (error) {
+                      console.error("Error calculating distance:", error);
+                      jarakPulang = "Error kalkulasi";
+                    }
+                  }
+                  
+                  return (
+                    <tr
+                      key={index}
+                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamMasuk}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakMasuk}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamPulang}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakPulang}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // Main render
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[500px] w-full">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Admin view
+  if (role === "admin") {
+    return (
+      <div className="w-full">
+        {viewMode === "list" ? renderInternList() : renderAttendanceTable()}
+      </div>
+    );
+  }
+
+  // Regular user view
+  return (
+    <div className="w-full">
+      {userInternData && (
+        <div className="mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h2 className="text-xl font-bold mb-2">Data Absensi Saya</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Nama</p>
+                <p className="font-medium">{userInternData.nama}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">NIM</p>
+                <p className="font-medium">{userInternData.nim}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Divisi</p>
+                <p className="font-medium">{userInternData.divisi || "-"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className="font-medium capitalize">{userInternData.status}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {nullLength ? (
+        <div className="flex justify-center items-center min-h-[300px] w-full">
+          <h1>Anda belum memiliki riwayat daftar hadir sama sekali</h1>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+          <table className="w-full min-w-[1200px] bg-white">
+            <thead className="sticky top-0">
+              <tr className="bg-gray-100">
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Tanggal</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jam Absen Masuk</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jarak Masuk</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Pesan Masuk</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jam Absen Pulang</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Jarak Pulang</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Pesan Pulang</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Keterangan Masuk</th>
+                <th className="px-4 py-3 border-b-2 border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap">Keterangan Pulang</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {data.absensi.map((item, index) => {
+                const absenDate = new Date(item.absenDate);
+                const date = absenDate.getDate();
+                const month = absenDate.getMonth();
+                const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                const year = absenDate.getFullYear();
+                
+                // Format waktu absen masuk
+                const jamMasuk = item.waktuDatang ? item.waktuDatang : `${absenDate.getHours().toString().padStart(2, "0")}:${absenDate.getMinutes().toString().padStart(2, "0")}`;
+                
+                // Format waktu absen pulang
+                const jamPulang = item.waktuPulang || "-";
+                
+                // Format jarak saat masuk
+                let jarakMasuk = "Tidak tersedia";
+                if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
+                  const userLoc = {
+                    latitude: parseFloat(item.latCordinate),
+                    longitude: parseFloat(item.longCordinate),
+                  };
+                  const centerLoc = {
+                    latitude: parseFloat(latCenter),
+                    longitude: parseFloat(longCenter),
+                  };
+                  try {
+                    jarakMasuk = `${getPreciseDistance(userLoc, centerLoc)} meter`;
+                  } catch (error) {
+                    console.error("Error calculating distance:", error);
+                    jarakMasuk = "Error kalkulasi";
+                  }
+                }
+                
+                // Format jarak saat pulang
+                let jarakPulang = "Tidak tersedia";
+                if (item.latPulang && item.longPulang && latCenter && longCenter) {
+                  const userLoc = {
+                    latitude: parseFloat(item.latPulang),
+                    longitude: parseFloat(item.longPulang),
+                  };
+                  const centerLoc = {
+                    latitude: parseFloat(latCenter),
+                    longitude: parseFloat(longCenter),
+                  };
+                  try {
+                    jarakPulang = `${getPreciseDistance(userLoc, centerLoc)} meter`;
+                  } catch (error) {
+                    console.error("Error calculating distance:", error);
+                    jarakPulang = "Error kalkulasi";
+                  }
+                }
+                
+                return (
+                  <tr
+                    key={index}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamMasuk}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakMasuk}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamPulang}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakPulang}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -2,13 +2,12 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../app/firebase/config";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DaftarHadirTable from "./DaftarHadirTable";
+import IzinTable from "./IzinTable";
 import { useRouter } from "next/navigation";
 
-export default function HistoriDaftarHadir() {
+export default function HistoriIzin() {
   const route = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
@@ -30,8 +29,6 @@ export default function HistoriDaftarHadir() {
           const tokenRole = token.claims.role || "guest";
           console.log("Hasil dari tokenRole adalah : ", tokenRole);
           setUserRole(tokenRole);
-          
-          // Log peran pengguna - dipindahkan ke dalam useEffect terpisah
         } catch (error) {
           console.error("Error getting token:", error);
           setUserRole("guest"); // Default fallback
@@ -61,7 +58,7 @@ export default function HistoriDaftarHadir() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
       </div>
     );
   }
@@ -79,15 +76,15 @@ export default function HistoriDaftarHadir() {
             Kembali ke Dashboard
           </Button>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">🔄 Riwayat Pengisian Daftar Hadir</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">📝 Riwayat Pengajuan Izin Tidak Hadir</h1>
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <DaftarHadirTable />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
+            <IzinTable />
           </div>
         </div>
       </div>
     </div>
   );
-}
+} 
