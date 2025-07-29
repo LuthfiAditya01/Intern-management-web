@@ -1,6 +1,6 @@
 // app/api/template/route.js
 import { NextResponse } from "next/server";
-import connectDB from "../../../lib/mongodb";
+import connectMongoDB from "../../../lib/mongodb";
 import Template from "../../../models/Template";
 
 let templates = [

@@ -63,4 +63,5 @@ const internSchema = new Schema({
 
 const Intern = mongoose.models.Intern || mongoose.model("Intern", internSchema);
 
+export { Intern };
 export default Intern;

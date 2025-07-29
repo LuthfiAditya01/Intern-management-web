@@ -95,27 +95,57 @@ const SertifikatPage = () => {
       setLoading(true);
       try {
         const response = await fetch('/api/intern');
-        if (!response.ok) throw new Error('Failed to fetch interns');
+        if (!response.ok) {
+          console.error(`API returned status: ${response.status}`);
+          throw new Error('Failed to fetch interns');
+        }
         
         const data = await response.json();
-        if (!data.interns || !Array.isArray(data.interns)) {
+        console.log("API response:", data); // Debug log
+        
+        // Handle the case where interns might be undefined
+        if (!data || !data.interns) {
+          console.error('API response is missing interns data:', data);
+          // Use empty array as fallback
+          setData([]);
+          setLoading(false);
+          setApiError(true);
+          return;
+        }
+        
+        if (!Array.isArray(data.interns)) {
+          console.error('Invalid data format, interns is not an array:', data.interns);
           throw new Error('Invalid data format received from API');
         }
         
         // Format the data to match your expected structure
-        const formattedData = data.interns.map((intern, index) => ({
-          id: intern._id || `intern-${index}`,
-          nim: intern.nim || '',
-          nama: intern.nama || '',
-          kelas: intern.kelas || '',
-          prodi: intern.prodi || '',
-          sekolah: intern.kampus || '',
-          tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split('T')[0] : '',
-          tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split('T')[0] : '',
-          lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
-          isSertifikatVerified: intern.isSertifikatVerified || false,
-          userId: intern.userId || null
-        }));
+        const formattedData = data.interns.map((intern, index) => {
+          console.log(`Intern ${index} _id:`, intern._id, "type:", typeof intern._id);
+          
+          // Check if _id looks like a MongoDB ObjectID (24 hex chars)
+          const isValidMongoId = intern._id && (typeof intern._id === 'string' || intern._id instanceof String) && /^[0-9a-fA-F]{24}$/.test(intern._id);
+          
+          console.log(`Intern ${index} has valid MongoDB ID:`, isValidMongoId);
+          
+          // Use the _id if valid, otherwise use a temporary ID
+          const validId = isValidMongoId ? intern._id : `intern-${index}`;
+            
+          return {
+            id: validId,
+            nim: intern.nim || '',
+            nama: intern.nama || '',
+            kelas: intern.kelas || '',
+            prodi: intern.prodi || '',
+            sekolah: intern.kampus || '',
+            tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split('T')[0] : '',
+            tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split('T')[0] : '',
+            lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
+            isSertifikatVerified: intern.isSertifikatVerified || false,
+            userId: intern.userId || null,
+            // Add this flag to indicate if the ID is a real MongoDB ID
+            hasValidId: isValidMongoId
+          };
+        });
         
         setData(formattedData);
         
@@ -129,6 +159,8 @@ const SertifikatPage = () => {
         setDisabledButtons(disabledMap);
       } catch (error) {
         console.error('Error fetching intern data:', error);
+        // Set empty data array to prevent mapping errors
+        setData([]);
         setApiError(true);
       } finally {
         setLoading(false);
@@ -294,9 +326,70 @@ const SertifikatPage = () => {
   const handleCetakMagang = async (item) => {
     try {
       const res = await fetch("/api/template");
-      const filledTemplate = await res.json();
-      setPreviewData(filledTemplate);
-      setShowPreview(true);
+      const templates = await res.json();
+      
+      // Make sure we're getting an array and selecting the first template
+      if (Array.isArray(templates) && templates.length > 0) {
+        console.log("Item data for certificate:", item);
+        // Format tanggal untuk tampilan sertifikat (contoh: 01 Januari 2025)
+        const formatTanggalIndonesia = (dateStr) => {
+          if (!dateStr) return "-";
+          const date = new Date(dateStr);
+          const options = { day: 'numeric', month: 'long', year: 'numeric' };
+          return date.toLocaleDateString('id-ID', options);
+        };
+
+        const tanggalMulaiFormatted = formatTanggalIndonesia(item.tanggalMulai);
+        const tanggalSelesaiFormatted = formatTanggalIndonesia(item.tanggalSelesai);
+        
+        // Tanggal saat ini untuk "Bandar Lampung, tanggal saat ini"
+        const today = new Date();
+        const tanggalSaatIni = formatTanggalIndonesia(today);
+
+        // Use the first template and customize it with intern data
+        const customizedTemplate = {
+          ...templates[0],
+          elements: templates[0].elements.map(el => {
+            // Customize fields based on the element ID and label
+            if (el.label === "Nama Peserta") {
+              return { ...el, value: item.nama };
+            }
+            else if (el.id === 5 && el.label === "Deskripsi") {
+              // Ganti deskripsi dengan data peserta yang sesuai
+              return { 
+                ...el, 
+                value: `atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode ${tanggalMulaiFormatted} sampai ${tanggalSelesaiFormatted}` 
+              };
+            }
+            else if (el.id === 6 && el.label === "Tanggal") {
+              // Update tanggal sertifikat dengan tanggal hari ini
+              return { ...el, value: `Bandar Lampung, ${tanggalSaatIni}` };
+            }
+            else if (el.label === "Tanggal Mulai" || el.label.includes("mulai")) {
+              return { ...el, value: tanggalMulaiFormatted };
+            }
+            else if (el.label === "Tanggal Selesai" || el.label.includes("selesai")) {
+              return { ...el, value: tanggalSelesaiFormatted };
+            }
+            else if (el.label === "Lama Magang" || el.label.includes("lama")) {
+              return { ...el, value: item.lamaMagang };
+            }
+            else if (el.label === "Program Studi" || el.label === "Prodi") {
+              return { ...el, value: item.prodi };
+            }
+            else if (el.label === "Sekolah" || el.label === "Perguruan Tinggi" || el.label.includes("kampus")) {
+              return { ...el, value: item.sekolah };
+            }
+            // Default: kembalikan elemen asli
+            return el;
+          })
+        };
+        
+        setPreviewData(customizedTemplate);
+        setShowPreview(true);
+      } else {
+        throw new Error("Invalid template format");
+      }
     } catch (error) {
       console.error("Error getting template:", error);
       alert("Gagal mengambil template");
@@ -416,11 +509,19 @@ const SertifikatPage = () => {
 
   const handleVerifySertifikat = async (item) => {
     try {
-      if (!item.userId) {
-        alert("User ID tidak ditemukan untuk peserta ini");
+      if (!item.id) {
+        alert("ID peserta tidak ditemukan");
         return;
       }
 
+      // Check if the intern has a valid MongoDB ID
+      if (!item.hasValidId) {
+        alert("Peserta ini belum memiliki ID yang valid di database. Silakan simpan data terlebih dahulu.");
+        return;
+      }
+      
+      console.log("Verifying certificate for intern with ID:", item.id);
+      
       const response = await fetch(`/api/intern/${item.id}/verify-sertifikat`, {
         method: "PUT",
         headers: {
@@ -429,6 +530,7 @@ const SertifikatPage = () => {
       });
 
       const result = await response.json();
+      console.log("Verification API response:", result);
 
       if (response.ok) {
         alert(`Sertifikat untuk ${item.nama} berhasil diverifikasi`);
@@ -438,11 +540,16 @@ const SertifikatPage = () => {
             d.id === item.id ? { ...d, isSertifikatVerified: true } : d
           )
         );
+        // Also update the disabled buttons state
+        setDisabledButtons({
+          ...disabledButtons,
+          [item.id]: true
+        });
       } else {
         throw new Error(result.message || "Gagal memverifikasi sertifikat");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error verifying certificate:", error);
       alert(`Gagal memverifikasi sertifikat: ${error.message}`);
     }
   };
@@ -701,12 +808,15 @@ const SertifikatPage = () => {
                             className={`px-3 py-1 rounded text-white ${
                               item.isSertifikatVerified
                                 ? "bg-green-500"
-                                : "bg-purple-600 hover:bg-purple-700"
+                                : item.hasValidId 
+                                  ? "bg-purple-600 hover:bg-purple-700"
+                                  : "bg-gray-400"
                             }`}
                             onClick={() => handleVerifySertifikat(item)}
-                            disabled={item.isSertifikatVerified}
+                            disabled={item.isSertifikatVerified || !item.hasValidId}
+                            title={!item.hasValidId ? "ID peserta tidak valid untuk verifikasi" : ""}
                           >
-                            {item.isSertifikatVerified ? "Terverifikasi" : "Verifikasi"}
+                            {item.isSertifikatVerified ? "Terverifikasi" : item.hasValidId ? "Verifikasi" : "ID Tidak Valid"}
                           </button>
                         </div>
                       </td>
