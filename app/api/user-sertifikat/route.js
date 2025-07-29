@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
+import connectMongoDB from "@/lib/mongodb";
 import mongoose from "mongoose";
 
 // Definisikan schema untuk sertifikat
@@ -18,7 +18,7 @@ const Sertifikat = mongoose.models.Sertifikat || mongoose.model('Sertifikat', se
 
 export async function POST(request) {
   try {
-    await connectDB();
+    await connectMongoDB();
     
     const data = await request.json();
     const sertifikat = await Sertifikat.create(data);
@@ -39,7 +39,7 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    await connectDB();
+    await connectMongoDB();
     const { searchParams } = new URL(request.url);
     const nim = searchParams.get("nim");
 

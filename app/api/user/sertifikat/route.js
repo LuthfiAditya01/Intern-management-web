@@ -1,11 +1,11 @@
-import connectDB from "@/lib/mongodb";
+import connectMongoDB from "@/lib/mongodb";
 import User from "@/models/User";
 import { auth } from "@/lib/firebaseAdmin"; // jika pakai Firebase
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
   try {
-    await connectDB();
+    await connectMongoDB();
 
     const { searchParams } = new URL(req.url);
     const nis = searchParams.get("nis");

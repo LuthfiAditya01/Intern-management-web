@@ -1,8 +1,8 @@
-import { connectDB } from "@/lib/mongodb";
+import connectMongoDB from "@/lib/mongodb";
 import Sertifikat from "@/models/Sertifikat";
 
 export default async function handler(req, res) {
-  await connectDB();
+  await connectMongoDB();
 
   if (req.method === "GET") {
     const data = await Sertifikat.find({});
