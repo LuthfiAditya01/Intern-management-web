@@ -52,7 +52,10 @@ const internSchema = new Schema({
     },
     email: {
         type: String,
-        
+    },
+    isSertifikatVerified: {
+        type: Boolean,
+        default: false,
     }
 }, {
     timestamps: true

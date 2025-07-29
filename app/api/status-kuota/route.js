@@ -1,5 +1,5 @@
 // Contoh di dalam file API route (misal: pages/api/status-kuota.js)
-import connectMongoDB from '@/libs/mongodb';
+import connectMongoDB from '@/lib/mongodb';
 import Intern from '@/models/internInfo';
 import Kuota from '@/models/kuota';
 
