@@ -117,10 +117,10 @@ export default function FormIzin({ userId, nama }) {
         <InputAbsen
           type={"text"}
           name={"linkBukti"}
-          label={"Link Bukti"}
+          label={"Link Bukti (opsional)"}
           placeholder={"Masukkan link dokumen bukti izin anda dalam link Google Drive"}
           onChange={handleInputChange}
-          required={true}
+          required={false}
           readonly={false}
         />
 

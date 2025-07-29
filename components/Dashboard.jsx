@@ -505,6 +505,13 @@ export default function Dashboard() {
                   color="blue"
                   onClick={() => handleMenuClick("/historiDaftarHadir")}
                 />
+                <MenuCard
+                  icon="📑"
+                  title="Pemantauan Perizinan Tidak Hadir"
+                  description="Pantau Riwayat Izin Peserta Magang"
+                  color="blue"
+                  onClick={() => handleMenuClick("/historiIzin")}
+                />
 
                 <MenuCard
                   onClick={() => handleMenuClick("/pengaturanAbsen")}
@@ -678,7 +685,7 @@ export default function Dashboard() {
             {userStatus !== "pending" && (
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Menu Utama</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <MenuCard
                     onClick={() => handleMenuClick("/dashboard")}
                     icon="🗓📖"
@@ -691,6 +698,13 @@ export default function Dashboard() {
                     icon="📓🔄"
                     title="Histori Daftar Hadir"
                     description="Lihat histori daftar hadirmu!"
+                    color="green"
+                  />
+                  <MenuCard
+                    onClick={() => handleMenuClick("/historiIzin")}
+                    icon="📓🔄"
+                    title="Histori Izin"
+                    description="Lihat histori Izin"
                     color="green"
                   />
                 </div>
