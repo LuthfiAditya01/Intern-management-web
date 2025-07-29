@@ -4,7 +4,6 @@ import '../../../lib/firebase-admin';
 
 export async function GET(request) {
     try {
-        // Verifikasi Admin
         const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
         if (!idToken) {
             return NextResponse.json({ message: 'Akses ditolak' }, { status: 401 });
