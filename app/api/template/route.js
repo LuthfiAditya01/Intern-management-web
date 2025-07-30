@@ -3,121 +3,171 @@ import { NextResponse } from "next/server";
 import connectMongoDB from "../../../lib/mongodb";
 import Template from "../../../models/Template";
 
-let templates = [
-  {
-    id: 1,
-    nama: "MAGANG/KP/PKL",
-    status: "DEFAULT",
-    imageUrl: "/uploads/ornamen.png",
-    elements: [
-      {
-        id: 1,
-        label: "Judul",
-        value: "SERTIFIKAT",
-        top: 47,
-        left: 50, // Ubah ke 50% untuk center
-        fontSize: 25,
-        fontWeight: "bold",
-        textAlign: "center",
-        transform: "translateX(-50%)", // Untuk perfect centering
-      },
-      {
-        id: 2,
-        label: "Nomor",
-        value: "NO: 0001/BPS/1871/KPG/2025",
-        top: 80,
-        left: 50,
-        fontSize: 15,
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 3,
-        label: "Sub Judul",
-        value: "diberikan kepada:",
-        top: 122,
-        left: 50,
-        fontSize: 13,
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 4,
-        label: "Nama Peserta",
-        value: "Nama Peserta",
-        top: 145,
-        left: 50,
-        fontSize: 28,
-        fontFamily: "Great Vibes, cursive",
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 5,
-        label: "Deskripsi",
-        value:
-          "atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode 16 Juni sampai 01 Agustus 2025",
-        top: 194,
-        left: 50,
-        fontSize: 13,
-        maxWidth: 500, // Perlebar maxWidth
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 6,
-        label: "Tanggal",
-        value: "Bandar Lampung, 05 Agustus 2025",
-        top: 277,
-        left: 50,
-        fontSize: 13,
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 7,
-        label: "Jabatan",
-        value: "Kepala Badan Pusat Statistik Kota Bandar Lampung",
-        top: 312,
-        left: 50,
-        fontSize: 13,
-        fontWeight: "bold",
-        maxWidth: 300,
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-      {
-        id: 8,
-        label: "Nama Penandatangan",
-        value: "Dr. Hady Suryono, M.Si",
-        top: 410,
-        left: 50,
-        fontSize: 13,
-        fontWeight: "bold",
-        textAlign: "center",
-        transform: "translateX(-50%)",
-      },
-    ],
-  },
-];
-
-export async function GET() {
-  return NextResponse.json(templates);
+// Initialize default template di database kalo belum ada
+async function initializeDefaultTemplate() {
+  await connectMongoDB();
+  
+  const existingTemplate = await Template.findOne({ status: "DEFAULT" });
+  if (!existingTemplate) {
+    const defaultTemplate = {
+      nama: "MAGANG/KP/PKL",
+      status: "DEFAULT",
+      imageUrl: "/uploads/ornamen.png",
+      elements: [
+        {
+          id: 1,
+          label: "Judul",
+          value: "SERTIFIKAT",
+          top: 47,
+          left: 50,
+          fontSize: 25,
+          fontWeight: "bold",
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 2,
+          label: "Nomor",
+          value: "NO: 0001/BPS/1871/KPG/2025",
+          top: 80,
+          left: 50,
+          fontSize: 15,
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 3,
+          label: "Sub Judul",
+          value: "diberikan kepada:",
+          top: 122,
+          left: 50,
+          fontSize: 13,
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 4,
+          label: "Nama Peserta",
+          value: "Nama Peserta",
+          top: 145,
+          left: 50,
+          fontSize: 28,
+          fontFamily: "Great Vibes, cursive",
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 5,
+          label: "Deskripsi",
+          value:
+            "atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode 16 Juni sampai 01 Agustus 2025",
+          top: 194,
+          left: 50,
+          fontSize: 13,
+          maxWidth: 500,
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 6,
+          label: "Tanggal",
+          value: "Bandar Lampung, 05 Agustus 2025",
+          top: 277,
+          left: 50,
+          fontSize: 13,
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 7,
+          label: "Jabatan",
+          value: "Kepala Badan Pusat Statistik Kota Bandar Lampung",
+          top: 312,
+          left: 50,
+          fontSize: 13,
+          fontWeight: "bold",
+          maxWidth: 300,
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+        {
+          id: 8,
+          label: "Nama Penandatangan",
+          value: "Dr. Hady Suryono, M.Si",
+          top: 410,
+          left: 50,
+          fontSize: 13,
+          fontWeight: "bold",
+          textAlign: "center",
+          transform: "translateX(-50%)",
+        },
+      ],
+    };
+    
+    await Template.create(defaultTemplate);
+  }
 }
 
+// GET - Ambil semua template dari database
+export async function GET() {
+  try {
+    await connectMongoDB();
+    await initializeDefaultTemplate();
+    
+    const templates = await Template.find({});
+    return NextResponse.json(templates);
+  } catch (error) {
+    console.error("Error fetching templates:", error);
+    return NextResponse.json({ error: "Failed to fetch templates" }, { status: 500 });
+  }
+}
+
+// PUT - Update template yang udah ada
+export async function PUT(request) {
+  try {
+    await connectMongoDB();
+    const { _id, ...templateData } = await request.json();
+    
+    if (!_id) {
+      return NextResponse.json({ error: "Template ID is required" }, { status: 400 });
+    }
+    
+    // Adjust element positions kalo perlu
+    const adjustedTemplate = {
+      ...templateData,
+      elements: templateData.elements.map((el) => ({
+        ...el,
+        top: el.top + 20,
+      })),
+    };
+    
+    const updatedTemplate = await Template.findByIdAndUpdate(
+      _id,
+      adjustedTemplate,
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedTemplate) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
+    
+    return NextResponse.json(updatedTemplate);
+  } catch (error) {
+    console.error("Error updating template:", error);
+    return NextResponse.json({ error: "Failed to update template" }, { status: 500 });
+  }
+}
+
+// POST - Create new template (optional, kalo mau bikin template baru)
 export async function POST(request) {
-  const template = await request.json();
-
-  const adjustedTemplate = {
-    ...template,
-    elements: template.elements.map((el) => ({
-      ...el,
-      top: el.top + 20,
-    })),
-  };
-
-  templates = templates.map((t) =>
-    t.id === template.id ? adjustedTemplate : t
-  );
-  return NextResponse.json(adjustedTemplate);
+  try {
+    await connectMongoDB();
+    const templateData = await request.json();
+    
+    const newTemplate = await Template.create(templateData);
+    return NextResponse.json(newTemplate);
+  } catch (error) {
+    console.error("Error creating template:", error);
+    return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
+  }
 }

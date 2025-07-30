@@ -26,6 +26,8 @@ const templateSchema = new mongoose.Schema(
         fontWeight: String,
         fontFamily: String,
         maxWidth: Number,
+        textAlign: String,
+        transform: String,
       },
     ],
   },
