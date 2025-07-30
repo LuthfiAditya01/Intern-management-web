@@ -4,7 +4,6 @@ import PreviewSertifikat from "@/components/PreviewSertifikat";
 import { auth } from "../firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { useReactToPrint } from "react-to-print";
-import html2canvas from "html2canvas";
 
 // Import styles module
 import styles from "./sertifikatSaya.module.css";
@@ -89,6 +88,17 @@ export default function SertifikatSaya() {
           margin: 0;
           padding: 0;
         }
+        html {
+          zoom: 160%;
+          -ms-zoom: 160%;
+          -webkit-zoom: 160%;
+        }
+        @-moz-document url-prefix() {
+          body {
+            transform: scale(1.6);
+            transform-origin: top left;
+          }
+        }
       }
     `,
     onBeforeGetContent: () => {
@@ -147,6 +157,9 @@ export default function SertifikatSaya() {
       const templates = await res.json();
 
       if (Array.isArray(templates) && templates.length > 0) {
+        // Ambil template DEFAULT
+        const defaultTemplate = templates.find(t => t.status === "DEFAULT") || templates[0];
+        
         // Format tanggal untuk tampilan sertifikat (contoh: 01 Januari 2025)
         const formatTanggalIndonesia = (dateStr) => {
           if (!dateStr) return "-";
@@ -174,8 +187,8 @@ export default function SertifikatSaya() {
 
         // Customize template dengan data intern
         const customizedTemplate = {
-          ...templates[0],
-          elements: templates[0].elements.map((el) => {
+          ...defaultTemplate,
+          elements: defaultTemplate.elements.map((el) => {
             // Customize fields based on the element ID and label
             if (el.label === "Nama Peserta") {
               return { ...el, value: internData.nama };

@@ -69,8 +69,8 @@ export default function Dashboard() {
             if (me) {
                 setUserInternData(me);
                 setUserStatus(me.status ?? "pending");
-                setUserDivision(me.divisi ?? "-");
-                setUserMentor(me.pembimbing ?? "-")
+                setUserDivision(me.divisi?.nama ?? "-");
+                setUserMentor(typeof me.pembimbing === 'object' ? me.pembimbing.nama ?? "-" : me.pembimbing ?? "-");
                 setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
             }
         }
@@ -411,7 +411,7 @@ export default function Dashboard() {
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/dashboard")}
                                                 icon="🗓️"
-                                               
+                                                title="Jadwal Magang"
                                                 description="Lihat ketersediaan jadwal magang"
                                                 color="blue"
                                             />
@@ -426,7 +426,7 @@ export default function Dashboard() {
                                             <MenuCard
                                                 onClick={() => handleMenuClick("/dashboard")}
                                                 icon="🗓️"
-                                               
+                                                title="Jadwal Magang"
                                                 description="Lihat ketersediaan jadwal magang"
                                                 color="blue"
                                             />

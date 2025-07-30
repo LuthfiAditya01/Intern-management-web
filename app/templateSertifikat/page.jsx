@@ -7,21 +7,51 @@ export default function TemplatePage() {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showEditElement, setShowEditElement] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   // Fetch templates dari MongoDB
   useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const res = await fetch("/api/template");
-        const data = await res.json();
-        setTemplates(data);
-      } catch (error) {
-        console.error("Error fetching templates:", error);
-      }
-    };
-
     fetchTemplates();
   }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch("/api/template");
+      const data = await res.json();
+      setTemplates(data);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    }
+  };
+
+  const handleCleanupTemplates = async () => {
+    if (!confirm("Apakah kamu yakin ingin menghapus semua template kecuali DEFAULT?")) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/template/cleanup", {
+        method: "DELETE"
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to clean up templates");
+      }
+      
+      const data = await res.json();
+      setMessage(data.message);
+      // Refresh templates after cleanup
+      fetchTemplates();
+    } catch (error) {
+      console.error("Error cleaning up templates:", error);
+      setMessage("Gagal menghapus template");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(""), 5000); // Clear message after 5 seconds
+    }
+  };
 
   const handleSetDefault = (id) => {
     setTemplates((prevTemplates) =>
@@ -73,14 +103,32 @@ export default function TemplatePage() {
       />
 
       <div className="bg-white rounded-xl shadow-lg border md:max-w-7xl mx-auto border-gray-100 p-2.5 md:p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div className="flex-1">
-            <h1 className="text-2xl font-semibold mb-4">Template Sertifikat</h1>
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-t">
-              Data Template
-            </div>
+            <h1 className="text-2xl font-semibold">Template Sertifikat</h1>
+          </div>
+          <div>
+            <button 
+              onClick={handleCleanupTemplates}
+              disabled={loading}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+            >
+              {loading ? "Processing..." : "Hapus Template Non-Default"}
+            </button>
+          </div>
+        </div>
 
-            <div className="overflow-x-auto border">
+        {message && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4">
+            {message}
+          </div>
+        )}
+
+        <div className="bg-blue-600 text-white px-4 py-2 rounded-t">
+          Data Template
+        </div>
+
+        <div className="overflow-x-auto border">
               <table className="w-full table-auto text-sm">
                 <thead className="bg-blue-200 text-left">
                   <tr>
@@ -133,8 +181,6 @@ export default function TemplatePage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Modal Edit Element */}
       {showEditElement && selectedTemplate && (

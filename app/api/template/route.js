@@ -112,9 +112,18 @@ async function initializeDefaultTemplate() {
 export async function GET() {
   try {
     await connectMongoDB();
-    await initializeDefaultTemplate();
     
+    // Initialize default template jika belum ada
+    // await initializeDefaultTemplate();
+    
+    // Hanya ambil templates dari database, tanpa manipulasi in-memory
     const templates = await Template.find({});
+    
+    // Jika tidak ada template, return empty array
+    if (!templates || templates.length === 0) {
+      return NextResponse.json([]);
+    }
+    
     return NextResponse.json(templates);
   } catch (error) {
     console.error("Error fetching templates:", error);
