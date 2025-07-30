@@ -7,7 +7,6 @@ import NavbarGeneral from "@/components/NavbarGeneral";
 const SertifikatPage = () => {
   // Existing state
   const [filters, setFilters] = useState({
-    kelas: "",
     prodi: "",
     search: "",
   });
@@ -134,7 +133,6 @@ const SertifikatPage = () => {
             id: validId,
             nim: intern.nim || '',
             nama: intern.nama || '',
-            kelas: intern.kelas || '',
             prodi: intern.prodi || '',
             sekolah: intern.kampus || '',
             tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split('T')[0] : '',
@@ -246,8 +244,6 @@ const SertifikatPage = () => {
     const searchTerm = filters.search?.toLowerCase();
 
     const matchesDropdowns =
-      (!filters.kelas ||
-        item.kelas?.toLowerCase() === filters.kelas.toLowerCase()) &&
       (!filters.prodi ||
         item.prodi?.toLowerCase() === filters.prodi.toLowerCase());
     !filters.sekolah ||
@@ -307,11 +303,11 @@ const SertifikatPage = () => {
     const selectedData = data.filter((d) => selectedIds.includes(d.id));
     const csv = selectedData
       .map((row) =>
-        [row.nim, row.nama, row.kelas, row.prodi, row.sekolah].join(",")
+        [row.nim, row.nama, row.prodi, row.sekolah].join(",")
       )
       .join("\n");
 
-    const blob = new Blob(["NIM,Nama,Kelas,Prodi,Sekolah\n" + csv], {
+    const blob = new Blob(["NIM,Nama,Prodi,Sekolah\n" + csv], {
       type: "text/csv",
     });
 
@@ -424,7 +420,6 @@ const SertifikatPage = () => {
                 id: data.length + index + 1,
                 nim: row?.["NIS/NPM"] || "",
                 nama: row?.["Nama"] || "",
-                kelas: row?.["Kelas/Semester"] || "",
                 prodi: row?.["Prodi"] || "",
                 sekolah: row?.["Sekolah/Perguruan Tinggi"] || "",
                 tanggalMulai: formatDate(row["Tanggal Mulai"]),
@@ -643,19 +638,6 @@ const SertifikatPage = () => {
           <div className="grid grid-cols-4 gap-4 mb-4">
             <select
               className="border p-2 rounded"
-              value={filters.kelas}
-              onChange={(e) =>
-                setFilters({ ...filters, kelas: e.target.value })
-              }
-            >
-              <option value="">Kelas</option>
-              <option value="12">12</option>
-              <option value="Semester 4">Semester 4</option>
-              <option value="Semester 5">Semester 5</option>
-              <option value="Semester 6">Semester 6</option>
-            </select>
-            <select
-              className="border p-2 rounded"
               value={filters.prodi}
               onChange={(e) =>
                 setFilters({ ...filters, prodi: e.target.value })
@@ -729,7 +711,6 @@ const SertifikatPage = () => {
                     <th className="p-2">No</th>
                     <th className="p-2">NIS/NPM</th>
                     <th className="p-2">Nama</th>
-                    <th className="p-2">Kelas</th>
                     <th className="p-2">Prodi</th>
                     <th className="p-2">Sekolah/Perguruan Tinggi</th>
                     <th className="p-2">Tanggal Mulai</th>
@@ -752,7 +733,6 @@ const SertifikatPage = () => {
                       <td className="p-2">{index + 1}</td>
                       <td className="p-2">{item.nim}</td>
                       <td className="p-2">{item.nama}</td>
-                      <td className="p-2">{item.kelas}</td>
                       <td className="p-2">{item.prodi}</td>
                       <td className="p-2">{item.sekolah}</td>
                       <td className="p-2">{item.tanggalMulai}</td>
@@ -889,7 +869,6 @@ const SertifikatPage = () => {
                     id: data.length + 1,
                     nim: form.nim.value,
                     nama: form.nama.value,
-                    kelas: form.kelas.value,
                     prodi: form.prodi.value,
                     sekolah: form.sekolah.value,
                     tanggalMulai: form.tanggalMulai.value,
@@ -942,49 +921,19 @@ const SertifikatPage = () => {
 
                   <div className="space-y-1">
                     <label
-                      htmlFor="kelas"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Kelas
-                    </label>
-                    <select
-                      id="kelas"
-                      name="kelas"
-                      className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white cursor-pointer"
-                    >
-                      <option value="">--- Pilih Kelas ---</option>
-                      <option value="12">12</option>
-                      <option value="Semester 4">Semester 4</option>
-                      <option value="Semester 5">Semester 5</option>
-                      <option value="Semester 6">Semester 6</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label
-                      htmlFor="prodi"
+                      htmlFor="nim"
                       className="block text-sm font-medium text-gray-700"
                     >
                       Prodi
                     </label>
-                    <select
+                    <input
                       id="prodi"
                       name="prodi"
-                      className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white cursor-pointer"
-                    >
-                      <option value="">--- Pilih Prodi ---</option>
-                      <option value="Ilmu Komputer">Ilmu Komputer</option>
-                      <option value="RPL">Rekayasa Perangkat Lunak</option>
-                      <option value="TKJ">Teknik Komputer dan Jaringan</option>
-                      <option value="MM">Multimedia</option>
-                      <option value="AKL">
-                        Akuntansi dan Keuangan Lembaga
-                      </option>
-                      <option value="OTKP">
-                        Otomatisasi dan Tata Kelola Perkantoran
-                      </option>
-                      <option value="BDP">Bisnis Daring dan Pemasaran</option>
-                    </select>
+                      type="text"
+                      placeholder="Masukkan Prodi"
+                      className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      required
+                    />
                   </div>
 
                   <div className="space-y-1">
@@ -1123,7 +1072,6 @@ const SertifikatPage = () => {
                     ...editData,
                     nim: form.nim.value,
                     nama: form.nama.value,
-                    kelas: form.kelas.value,
                     prodi: form.prodi.value,
                     sekolah: form.sekolah.value,
                     tanggalMulai: editTanggalMulai,
@@ -1170,28 +1118,6 @@ const SertifikatPage = () => {
                       required
                       className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label
-                      htmlFor="kelas"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Kelas
-                    </label>
-                    <select
-                      defaultValue={editData.kelas}
-                      id="kelas"
-                      name="kelas"
-                      type="text"
-                      className="w-full border border-gray-300 p-3 rounded-md text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">--- Pilih Kelas ---</option>
-                      <option value="12">12</option>
-                      <option value="Semester 4">Semester 4</option>
-                      <option value="Semester 5">Semester 5</option>
-                      <option value="Semester 6">Semester 6</option>
-                    </select>
                   </div>
 
                   <div className="space-y-1">
