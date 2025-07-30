@@ -230,7 +230,7 @@ export default function DivisionData(intern) {
                                             </td>
                                             <td className="px-6 py-4 flex mt-1">
                                                 <Link
-                                                    href={`/assignForm/${intern._id}`}
+                                                    href={`/assignForm/${intern.id}`}
                                                     className="p-1 rounded-full hover:bg-blue-50"
                                                     title="Edit"
                                                 >

@@ -15,13 +15,13 @@ export async function GET(request) {
                 include: [
                     {
                         model: User,
-                        as: 'user',
+                        as: 'internUser',
                         attributes: ['username', 'email', 'role']
                     },
                     {
                         model: Mentor,
-                        as: 'mentor',
-                        attributes: ['nama', 'nip', 'divisi']
+                        as: 'pembimbing', // PERBAIKAN: Ubah alias dari 'mentor' ke 'pembimbing'
+                        attributes: ['id', 'nama', 'nip', 'divisi']
                     }
                 ],
                 order: [['nama', 'ASC']]
@@ -41,13 +41,13 @@ export async function GET(request) {
             include: [
                 {
                     model: User,
-                    as: 'user',
+                    as: 'internUser',
                     attributes: ['username', 'email', 'role']
                 },
                 {
                     model: Mentor,
-                    as: 'mentor',
-                    attributes: ['nama', 'nip', 'divisi']
+                    as: 'pembimbing', // PERBAIKAN: Ubah alias dari 'mentor' ke 'pembimbing'
+                    attributes: ['id', 'nama', 'nip', 'divisi']
                 }
             ],
             order: [['nama', 'ASC']]

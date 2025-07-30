@@ -1,17 +1,22 @@
-// sync-db.js
+// File: sync-db.js
+
 import { sequelize } from './libs/postgresql.js';
-import './models/index.js'; // Pastikan semua model diimpor
+import './models/index.js'; // Pastikan ini mengimpor semua model Anda
 
 const syncDatabase = async () => {
   try {
-    console.log('Starting database synchronization...');
-    // force: true akan menghapus tabel jika sudah ada dan membuatnya kembali
-    await sequelize.sync({ force: true });
-    console.log('Database synchronized successfully.');
+    console.log('Memulai sinkronisasi database...');
+
+    // alter: true akan membuat tabel jika belum ada, 
+    // atau mengubah jika ada perbedaan kolom, tanpa menghapus data.
+    await sequelize.sync({ alter: true });
+
+    console.log('Sinkronisasi database berhasil.');
   } catch (error) {
-    console.error('Error synchronizing database:', error);
+    console.error('Gagal melakukan sinkronisasi:', error);
   } finally {
     await sequelize.close();
+    console.log('Koneksi ditutup.');
   }
 };
 

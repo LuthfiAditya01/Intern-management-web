@@ -57,4 +57,5 @@ User.prototype.verifyPassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-export default User; 
+// Associations akan didefinisikan di file terpisah untuk menghindari circular dependencies
+export default User;

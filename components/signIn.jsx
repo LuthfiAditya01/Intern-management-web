@@ -53,11 +53,22 @@ export default function Login() {
         if (user && !loading && !signInErr) {
             setIsLoading(true); // Tampilkan loading spinner
             try {
+                // PERBAIKAN: Force token refresh untuk memastikan role terbaru
+                await user.user.getIdToken(true); // Force refresh token, gunakan user.user
+                
                 // Panggil fungsi sinkronisasi setelah login firebase berhasil
                 const appUser = await syncUserWithBackend(user.user);
                 console.log('Sinkronisasi berhasil. Role pengguna:', appUser.role);
-                // Arahkan ke dashboard setelah sinkronisasi selesai
-                router.push('/dashboard');
+                
+                // PERBAIKAN: Redirect berdasarkan role user
+                if (appUser.role === 'admin') {
+                    router.push('/admin');
+                } else if (appUser.role === 'mentor') {
+                    router.push('/dashboardMentor');
+                } else {
+                    // Default untuk intern atau role lainnya
+                    router.push('/dashboard');
+                }
             } catch (err) {
                 // Tangkap error dari fungsi sinkronisasi
                 setError(err.message || "Gagal memverifikasi data pengguna di server.");
@@ -169,6 +180,7 @@ const syncUserWithBackend = async (firebaseUser) => {
                         throw new Error(data.message || "Gagal menambahkan data intern.");
                     }
 
+                    // PERBAIKAN: Redirect ke dashboard intern setelah registrasi
                     router.push("/dashboard");
                 }
             }

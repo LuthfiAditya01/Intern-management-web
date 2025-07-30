@@ -36,10 +36,10 @@ export default function PenilaianPage() {
                 setUser(user);
                 const token = await user.getIdTokenResult();
                 const admin = token.claims.role === "admin";
-                const pembimbing = token.claims.role === "pembimbing";
+                const pembimbing = token.claims.role === "mentor"; // PERBAIKAN: Gunakan 'mentor' bukan 'pembimbing'
                 setIsAdmin(admin);
                 setIsPembimbing(pembimbing);
-                if (token.claims.role === "pembimbing") {
+                if (token.claims.role === "mentor") { // PERBAIKAN: Gunakan 'mentor' bukan 'pembimbing'
                     console.log("ini pembimbing");
                 } else {
                     console.log("ini bukan pembimbing")

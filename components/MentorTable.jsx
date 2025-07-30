@@ -36,7 +36,7 @@ export default function MentorTable() {
                 setUser(user);
                 const token = await user.getIdTokenResult();
                 const role = token.claims.role;
-                const isAuthorized = role === "admin" || role === "pembimbing";
+                const isAuthorized = role === "admin" || role === "mentor"; // PERBAIKAN: Gunakan 'mentor' bukan 'pembimbing'
 
                 setIsAdmin(role === "admin");
 
@@ -59,7 +59,7 @@ export default function MentorTable() {
             setLoading(true);
             try {
                 const res = await axios.get("/api/mentor");
-                setMentors(Array.isArray(res.data) ? res.data : []);
+                setMentors(Array.isArray(res.data.mentors) ? res.data.mentors : []);
             } catch (error) {
                 console.error("Gagal memuat data pembimbing:", error);
                 setMentors([]);
@@ -90,7 +90,7 @@ export default function MentorTable() {
         return interns.filter(intern =>
             intern.status === "aktif" &&
             intern.pembimbing &&
-            intern.pembimbing._id === mentorId
+            intern.pembimbing.id === mentorId // PERBAIKAN: Gunakan 'id' bukan '_id' untuk PostgreSQL UUID
         ).length;
     };
 
@@ -116,7 +116,7 @@ export default function MentorTable() {
             await fetch(`/api/mentor?id=${mentorId}`, {
                 method: "DELETE",
             });
-            setMentors(mentors.filter(mentor => mentor._id !== mentorId));
+            setMentors(mentors.filter(mentor => mentor.id !== mentorId));
         } catch (error) {
             console.error("Error deleting mentor data:", error);
         } finally {
@@ -233,12 +233,12 @@ export default function MentorTable() {
                             <tbody>
                                 {paginatedMentors.length > 0 ? (
                                     paginatedMentors.map((mentor, index) => (
-                                        <tr key={mentor._id || index} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                                        <tr key={mentor.id || index} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 text-center">{((currentPage - 1) * itemsPerPage) + index + 1}</td>
                                             <td className="px-6 py-4 font-medium">{mentor.nama}</td>
                                             {isAdmin && (<td className="px-6 py-4 text-center">{mentor.nip}</td>)}
                                             <td className="px-6 py-4 text-center">
-                                                {getActiveMenteeCount(mentor._id)}
+                                                {getActiveMenteeCount(mentor.id)} {/* PERBAIKAN: Gunakan 'id' bukan '_id' */}
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDivisionColor(mentor.divisi)}`}>
@@ -254,10 +254,10 @@ export default function MentorTable() {
                                                 <td className="px-6 py-4 text-center">
                                                     <div className="flex gap-2 justify-center">
                                                         {/* Link to an edit page, assuming the route is /editMentorConfig/:id */}
-                                                        {/* <Link href={`/editMentorConfig/${mentor._id}`} className="p-1 rounded-full hover:bg-blue-50" title="Edit">
+                                                        {/* <Link href={`/editMentorConfig/${mentor.id}`} className="p-1 rounded-full hover:bg-blue-50" title="Edit">
                                                             <Pencil size={20} className="text-blue-600" />
                                                         </Link> */}
-                                                        <button onClick={() => openDeleteModal(mentor._id, mentor.nama)} className="cursor-pointer p-1 rounded-full hover:bg-red-50" title="Delete">
+                                                        <button onClick={() => openDeleteModal(mentor.id, mentor.nama)} className="cursor-pointer p-1 rounded-full hover:bg-red-50" title="Delete">
                                                             <Trash2 size={20} className="text-red-600" />
                                                         </button>
                                                     </div>

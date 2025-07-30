@@ -81,7 +81,8 @@ export default function SignUpPembimbing() {
                     const data = await res.json();
                     throw new Error(data.message || "Gagal menyimpan data pembimbing.");
                 }
-                router.push("/dashboard");
+                // Paksa reload agar context user/role ter-refresh
+                window.location.href = "/dashboardMentor";
             } else if (signUpError) {
                 throw signUpError;
             }

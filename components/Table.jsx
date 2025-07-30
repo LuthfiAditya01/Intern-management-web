@@ -280,10 +280,10 @@ export default function Table(intern) {
                                             <td className="text-center capitalize">{intern.pembimbing?.nama || '-'}</td>
                                             {isAdmin && (
                                                 <td className="px-6 py-4 text-center flex gap-2 justify-center">
-                                                    <Link href={`/editDataConfig/${intern._id}`} className="p-1 rounded-full hover:bg-blue-50" title="Edit">
+                                                    <Link href={`/editDataConfig/${intern.id}`} className="p-1 rounded-full hover:bg-blue-50" title="Edit">
                                                         <Pencil size={20} className="text-blue-600" />
                                                     </Link>
-                                                    <button onClick={() => openDeleteModal(intern._id, intern.nama)} className="cursor-pointer p-1 rounded-full hover:bg-red-50" title="Delete">
+                                                    <button onClick={() => openDeleteModal(intern.id, intern.nama)} className="cursor-pointer p-1 rounded-full hover:bg-red-50" title="Delete">
                                                         <Trash2 size={20} className="text-red-600" />
                                                     </button>
                                                 </td>

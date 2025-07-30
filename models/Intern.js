@@ -75,11 +75,4 @@ const Intern = sequelize.define('Intern', {
   timestamps: true,
 });
 
-// Define associations
-Intern.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasOne(Intern, { foreignKey: 'userId', as: 'intern' });
-
-Intern.belongsTo(Mentor, { foreignKey: 'mentorId', as: 'mentor' });
-Mentor.hasMany(Intern, { foreignKey: 'mentorId', as: 'interns' });
-
 export default Intern; 

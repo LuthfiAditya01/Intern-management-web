@@ -46,8 +46,8 @@ const Mentor = sequelize.define('Mentor', {
   timestamps: true,
 });
 
-// Define association
-Mentor.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasOne(Mentor, { foreignKey: 'userId', as: 'mentor' });
+// PERBAIKAN: Hapus asosiasi yang didefinisikan di sini karena sudah didefinisikan di associations.js
+// Mentor.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+// User.hasOne(Mentor, { foreignKey: 'userId', as: 'mentor' });
 
 export default Mentor; 

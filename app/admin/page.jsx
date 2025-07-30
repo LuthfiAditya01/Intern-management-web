@@ -89,6 +89,13 @@ export default function KelolaRolePage() {
 
             setSuccess(`Role untuk ${targetUser.email} berhasil diubah.`);
             setUsers(users.map(u => u.uid === targetUser.uid ? { ...u, hasChanged: false } : u));
+            
+            // PERBAIKAN: Tambahkan notifikasi untuk logout dan login ulang
+            if (targetUser.uid === currentUser.uid) {
+                setSuccess(`Role Anda berhasil diubah. Silakan logout dan login ulang untuk menerapkan perubahan.`);
+            } else {
+                setSuccess(`Role untuk ${targetUser.email} berhasil diubah. User tersebut perlu logout dan login ulang untuk menerapkan perubahan.`);
+            }
         } catch (err) {
             setError(err.message);
         }
@@ -144,7 +151,7 @@ export default function KelolaRolePage() {
         switch (role) {
             case 'admin':
                 return { color: 'bg-red-100 text-red-700 border-red-200', icon: Crown, text: 'Admin' };
-            case 'pembimbing':
+            case 'mentor':
                 return { color: 'bg-purple-100 text-purple-700 border-purple-200', icon: UserCheck, text: 'Pembimbing' };
             default:
                 return { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: User, text: 'User' };
@@ -223,7 +230,7 @@ export default function KelolaRolePage() {
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-xs sm:text-sm font-medium text-gray-600">Pembimbing</p>
-                                                <p className="text-xl sm:text-2xl font-bold text-gray-800">{users.filter(u => u.role === 'pembimbing').length}</p>
+                                                <p className="text-xl sm:text-2xl font-bold text-gray-800">{users.filter(u => u.role === 'mentor').length}</p>
                                             </div>
                                             <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
                                                 <UserCheck className="text-purple-600" size={20} />
@@ -298,7 +305,7 @@ export default function KelolaRolePage() {
                                                                 onChange={(e) => handleRoleChange(user.uid, e.target.value)}
                                                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 text-sm"
                                                             >
-                                                                <option value="user">👤 User</option>
+                                                                <option value="intern">👤 User</option>
                                                                 <option value="mentor">🎓 Pembimbing</option>
                                                                 <option value="admin">👑 Admin</option>
                                                             </select>
@@ -352,8 +359,8 @@ export default function KelolaRolePage() {
                                                                 onChange={(e) => handleRoleChange(user.uid, e.target.value)}
                                                                 className="border cursor-pointer border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
                                                             >
-                                                                <option value="user">👤 User</option>
-                                                                <option value="pembimbing">🎓 Pembimbing</option>
+                                                                <option value="intern">👤 User</option>
+                                                                <option value="mentor">🎓 Pembimbing</option>
                                                                 <option value="admin">👑 Admin</option>
                                                             </select>
 

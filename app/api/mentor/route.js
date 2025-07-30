@@ -6,15 +6,15 @@ export async function GET() {
     try {
         await connectPostgreSQL();
         const mentors = await Mentor.findAll({
-            where: { status: 'aktif' },
+            attributes: ['id', 'nama', 'nip', 'email', 'divisi', 'status'], // PERBAIKAN: Tambahkan atribut yang diperlukan
             include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['username', 'email', 'role']
-                }
-            ]
-        });
+        {
+            model: User,
+            as: 'mentorUser', // PERBAIKAN: Ubah dari 'user' ke 'mentorUser' sesuai associations.js
+            attributes: ['username', 'email', 'role']
+        }
+    ]
+});
         return NextResponse.json({ mentors }, {status: 200});
     } catch (error) {
         console.error("GET mentors error:", error);
@@ -26,7 +26,6 @@ export async function GET() {
 
 export async function POST(request) {
     const t = await sequelize.transaction();
-
     try {
         await connectPostgreSQL();
         const body = await request.json();
@@ -38,7 +37,6 @@ export async function POST(request) {
         }
 
         // 1. CARI atau BUAT record User terlebih dahulu
-        // Jika user belum ada di DB, akan dibuat dengan role default 'intern'
         const [user, created] = await User.findOrCreate({
             where: { firebaseUid: firebaseUid },
             defaults: {

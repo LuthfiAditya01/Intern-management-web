@@ -22,8 +22,17 @@ export default function InternDataManagement({
     const [newNim, setNewNim] = useState(nim);
     const [newProdi, setNewProdi] = useState(prodi);
     const [newKampus, setNewKampus] = useState(kampus);
-    const [newTanggalMulai, setNewTanggalMulai] = useState(tanggalMulai);
-    const [newTanggalSelesai, setNewTanggalSelesai] = useState(tanggalSelesai);
+    
+    // Format tanggal ke YYYY-MM-DD untuk input type="date"
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return ''; // Invalid date
+        return date.toISOString().split('T')[0];
+    };
+    
+    const [newTanggalMulai, setNewTanggalMulai] = useState(formatDate(tanggalMulai));
+    const [newTanggalSelesai, setNewTanggalSelesai] = useState(formatDate(tanggalSelesai));
     const [newStatus, setNewStatus] = useState(status);
     const [interns, setInterns] = useState([]);
     const [error, setError] = useState(null);
@@ -31,18 +40,36 @@ export default function InternDataManagement({
     const [isFetching, setIsFetching] = useState(true);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [newDivisi, setNewDivisi] = useState(divisi);
-    const [newPembimbingId, setNewPembimbingId] = useState(pembimbing?._id || "");
+    // PERBAIKAN: Pastikan mentorId diambil dengan benar dari pembimbing
+    const [newPembimbingId, setNewPembimbingId] = useState(pembimbing?.id || pembimbing?._id || "");
     const [pembimbingList, setPembimbingList] = useState([]);
 
     const handleTanggalMulaiChange = (e) => setNewTanggalMulai(e.target.value);
     const handleTanggalSelesaiChange = (e) => setNewTanggalSelesai(e.target.value);
     const handleDivisiChange = (e) => setNewDivisi(e.target.value);
-    const handlePembimbingChange = (e) => setNewPembimbing(e.target.value);
+    const handlePembimbingChange = (e) => {
+        const selectedMentorId = e.target.value;
+        setNewPembimbingId(selectedMentorId);
+        
+        // Jika pembimbing dipilih, ambil data divisinya
+        if (selectedMentorId) {
+            const selectedMentor = pembimbingList.find(p => p.id === selectedMentorId);
+            if (selectedMentor && selectedMentor.divisi) {
+                setNewDivisi(selectedMentor.divisi);
+            }
+        } else {
+            // Jika tidak ada pembimbing yang dipilih, kosongkan divisi
+            setNewDivisi('-');
+        }
+    };
+    
     const handleStatusChange = (e) => {
         const newStatusValue = e.target.value;
         setNewStatus(newStatusValue);
 
-        if (newStatusValue !== 'aktif') {
+        // PERBAIKAN: Jangan otomatis kosongkan divisi saat status aktif
+        // Divisi akan terisi otomatis berdasarkan pembimbing yang dipilih
+        if (newStatusValue !== 'aktif' && newStatusValue !== 'pending') {
             setNewDivisi('-');
         }
     };
@@ -58,7 +85,7 @@ export default function InternDataManagement({
                 if (!res.ok) throw new Error("Gagal mengambil daftar pembimbing");
 
                 const data = await res.json();
-                setPembimbingList(data);
+                setPembimbingList(data.mentors || []);
             } catch (error) {
                 console.error("Error fetching pembimbings: ", error);
                 setError(error.message);
@@ -69,6 +96,16 @@ export default function InternDataManagement({
 
         fetchAllPembimbings();
     }, []);
+
+    // PERBAIKAN: Inisialisasi divisi berdasarkan pembimbing yang sudah ada
+    useEffect(() => {
+        if (pembimbingList.length > 0 && pembimbing?.id) {
+            const currentMentor = pembimbingList.find(p => p.id === pembimbing.id);
+            if (currentMentor && currentMentor.divisi) {
+                setNewDivisi(currentMentor.divisi);
+            }
+        }
+    }, [pembimbingList, pembimbing]);
 
     useEffect(() => {
         const fetchInterns = async () => {
@@ -82,7 +119,12 @@ export default function InternDataManagement({
                 }
 
                 const data = await res.json();
-                setInterns(data.interns);
+                // PERBAIKAN: Data intern langsung dari response, bukan dari data.interns
+                if (data.intern) {
+                    setInterns([data.intern]); // Wrap dalam array untuk konsistensi
+                } else {
+                    setInterns([]);
+                }
             } catch (error) {
                 console.error("Error loading data: ", error);
                 console.log('FETCHING:', `api/intern/${id}`);
@@ -106,48 +148,65 @@ export default function InternDataManagement({
         { value: "pending", label: "Pending", color: "text-yellow-600" },
     ];
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+    // Ganti seluruh fungsi handleSubmit Anda dengan ini
 
-        if (newStatus === 'aktif' && !newPembimbingId) {
-            alert('Silakan pilih pembimbing untuk status aktif.');
-            setLoading(false);
-            return;
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (newStatus === 'aktif' && !newPembimbingId) {
+        alert('Silakan pilih pembimbing untuk status aktif.');
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/intern/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                newNama,
+                newNim,
+                newProdi,
+                newKampus,
+                newTanggalMulai,
+                newTanggalSelesai,
+                newStatus,
+                newDivisi,
+                // PERBAIKAN 1: Menggunakan key 'newMentorId' yang benar
+                newMentorId: newPembimbingId, 
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Gagal menyimpan data peserta magang');
         }
 
+        // PERBAIKAN 2: Alihkan & segarkan halaman setelah sukses, ganti logika modal
+        alert('Data berhasil diperbarui!'); // Notifikasi sederhana
+        
+        // PERBAIKAN: Refresh data mentor untuk update jumlah peserta bimbingan
         try {
-            const response = await fetch(`http://localhost:3000/api/intern/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    newNama,
-                    newNim,
-                    newProdi,
-                    newKampus,
-                    newTanggalMulai,
-                    newTanggalSelesai,
-                    newStatus,
-                    newDivisi,
-                    newPembimbing: newPembimbingId,
-                }),
+            await fetch('http://localhost:3000/api/mentor', {
+                cache: 'no-store',
             });
-
-            if (!response.ok) {
-                throw new Error('Gagal menyimpan data peserta magang');
-            }
-
-            setShowSuccessModal(true);
-
         } catch (error) {
-            console.log('Error', error);
-            alert('Terjadi kesalahan saat menyimpan data');
-        } finally {
-            setLoading(false);
+            console.error("Error refreshing mentor data:", error);
         }
-    };
+        
+        route.push('/dataMagang'); // Arahkan kembali ke halaman daftar
+        route.refresh(); // Paksa Next.js untuk memuat ulang data di halaman daftar
+
+    } catch (error) {
+        console.error('Error', error);
+        alert(`Terjadi kesalahan saat menyimpan data: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
@@ -333,6 +392,25 @@ export default function InternDataManagement({
                                                 ))}
                                             </select>
                                         </div>
+                                        
+                                        {/* Divisi - Terisi otomatis berdasarkan pembimbing */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Divisi
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="divisi"
+                                                value={newDivisi}
+                                                onChange={handleDivisiChange}
+                                                placeholder="Divisi akan terisi otomatis"
+                                                className="w-full px-4 py-3 border rounded-lg bg-gray-50"
+                                                readOnly
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Divisi akan terisi otomatis berdasarkan pembimbing yang dipilih
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -349,12 +427,12 @@ export default function InternDataManagement({
                                         <select
                                             name="pembimbing"
                                             value={newPembimbingId}
-                                            onChange={(e) => setNewPembimbingId(e.target.value)}
+                                            onChange={handlePembimbingChange}
                                             className="w-full cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         >
                                             <option value="">-- Tidak Ada / Belum Di Set --</option>
                                             {pembimbingList.map((p) => (
-                                                <option key={p._id} value={p._id}>
+                                                <option key={p.id} value={p.id}>
                                                     {p.nama}
                                                 </option>
                                             ))}

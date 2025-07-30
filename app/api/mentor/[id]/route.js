@@ -53,7 +53,7 @@ export async function GET(request, { params }) {
             include: [
                 {
                     model: User,
-                    as: 'user',
+                    as: 'mentorUser',
                     attributes: ['username', 'email', 'role']
                 }
             ]

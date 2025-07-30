@@ -29,7 +29,8 @@ export default function DashboardMentor() {
                 const token = await user.getIdTokenResult();
                 const userRole = token.claims.role;
 
-                if (userRole === "pembimbing") {
+                // PERBAIKAN: Gunakan 'mentor' bukan 'pembimbing' untuk konsistensi dengan database
+                if (userRole === "mentor") {
                     setIsPembimbing(true);
                 } else {
                     // Jika user bukan pembimbing, langsung hentikan loading.
@@ -60,7 +61,7 @@ export default function DashboardMentor() {
                 ]);
 
                 // Pastikan data yang diterima adalah array
-                setMentors(mentorRes.data.pembimbings || []);
+                setMentors(mentorRes.data.mentors || []);
                 setInterns(internRes.data.interns || []);
 
             } catch (err) {
@@ -80,15 +81,16 @@ export default function DashboardMentor() {
         console.log("DEBUG: User UID:", user.uid);
         console.log("DEBUG: Mentors:", mentors);
 
-        const currentMentor = mentors.find((m) => m.userId === user.uid);
+        const currentMentor = mentors.find((m) => m.user?.firebaseUid === user.uid);
         console.log("DEBUG: currentMentor:", currentMentor);
 
         setUserMentorData(currentMentor);
 
         if (currentMentor) {
             const count = interns.filter((intern) =>
-                intern.pembimbing?._id &&
-                String(intern.pembimbing._id) === String(currentMentor._id)
+                intern.pembimbing?.id && // PERBAIKAN: Gunakan 'id' bukan '_id'
+                String(intern.pembimbing.id) === String(currentMentor.id) && // PERBAIKAN: Gunakan 'id' bukan '_id'
+                intern.status === "aktif" // PERBAIKAN: Tambahkan filter status aktif
             ).length;
             setInternCountByMentor(count);
         }

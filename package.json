@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -20,6 +20,8 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-pdf-viewer/core": "^3.12.0",
+    "@react-pdf-viewer/default-layout": "^3.12.0",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
@@ -28,28 +30,34 @@
     "dotenv": "^17.2.1",
     "firebase": "^11.9.1",
     "firebase-admin": "^13.4.0",
+    "form-data": "^4.0.4",
+    "geolib": "^3.3.4",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.525.0",
     "next": "15.3.4",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
-    "react": "^19.0.0",
+    "react": "^19.1.0",
     "react-dom": "^19.0.0",
     "react-firebase-hooks": "^5.1.1",
     "react-icons": "^5.5.0",
-    "recharts": "^3.0.2",
-    "sequelize": "^6.37.1",
-    "sqlite3": "^5.1.7",
+    "react-leaflet": "^5.0.0",
+    "recharts": "^3.1.0",
+    "sequelize": "^6.37.7",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/pg": "^8.11.10",
+    "@types/leaflet": "^1.9.20",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "tw-animate-css": "^1.3.4"
+  },
+  "overrides": {
+    "pdfjs-dist": "^4.4.168"
   }
 }
