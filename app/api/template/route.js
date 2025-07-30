@@ -141,18 +141,11 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Template ID is required" }, { status: 400 });
     }
     
-    // Adjust element positions kalo perlu
-    const adjustedTemplate = {
-      ...templateData,
-      elements: templateData.elements.map((el) => ({
-        ...el,
-        top: el.top + 20,
-      })),
-    };
-    
+    // JANGAN adjust element positions - ini penyebab element makin turun ke bawah tiap kali save
+    // Langsung update template tanpa manipulasi position
     const updatedTemplate = await Template.findByIdAndUpdate(
       _id,
-      adjustedTemplate,
+      templateData,
       { new: true, runValidators: true }
     );
     
