@@ -16,12 +16,15 @@ const SertifikatPage = () => {
   const [tanggalMulai, setTanggalMulai] = useState("");
   const [tanggalSelesai, setTanggalSelesai] = useState("");
   const [lamaMagang, setLamaMagang] = useState("");
+  const [nomorUrut, setNomorUrut] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [editTanggalMulai, setEditTanggalMulai] = useState("");
   const [editTanggalSelesai, setEditTanggalSelesai] = useState("");
   const [editLamaMagang, setEditLamaMagang] = useState("");
+  const [editNomorUrut, setEditNomorUrut] = useState("");
+  const [editNomorSertifikat, setEditNomorSertifikat] = useState("");
   const [templates, setTemplates] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
@@ -48,6 +51,31 @@ const SertifikatPage = () => {
     if (days > 0) result += `${days} hari`;
     
     return result.trim();
+  };
+
+  // Helper function to generate certificate number
+  const generateNomorSertifikat = (nomorUrut) => {
+    if (!nomorUrut) return '';
+    
+    // Pad with zeros to make it 4 digits
+    const paddedNumber = nomorUrut.toString().padStart(4, '0');
+    
+    // Get current year
+    const currentYear = new Date().getFullYear();
+    
+    return `${paddedNumber}/BPS/1871/KPG/${currentYear}`;
+  };
+
+  // Extract nomor urut from full certificate number
+  const extractNomorUrut = (fullNomorSertifikat) => {
+    if (!fullNomorSertifikat) return '';
+    
+    const parts = fullNomorSertifikat.split('/');
+    if (parts.length > 0) {
+      // Remove leading zeros and return as number string
+      return parseInt(parts[0], 10).toString();
+    }
+    return '';
   };
 
   // Handle certificate verification
@@ -138,6 +166,7 @@ const SertifikatPage = () => {
             tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split('T')[0] : '',
             tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split('T')[0] : '',
             lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
+            nomorSertifikat: intern.nomorSertifikat || '',
             isSertifikatVerified: intern.isSertifikatVerified || false,
             userId: intern.userId || null,
             // Add this flag to indicate if the ID is a real MongoDB ID
@@ -217,6 +246,8 @@ const SertifikatPage = () => {
     if (editData) {
       setEditTanggalMulai(editData.tanggalMulai || "");
       setEditTanggalSelesai(editData.tanggalSelesai || "");
+      setEditNomorSertifikat(editData.nomorSertifikat || "");
+      setEditNomorUrut(extractNomorUrut(editData.nomorSertifikat));
       hitungEditLamaMagang(editData.tanggalMulai, editData.tanggalSelesai);
     }
   }, [editData]);
@@ -303,11 +334,11 @@ const SertifikatPage = () => {
     const selectedData = data.filter((d) => selectedIds.includes(d.id));
     const csv = selectedData
       .map((row) =>
-        [row.nim, row.nama, row.prodi, row.sekolah].join(",")
+        [row.nim, row.nama, row.prodi, row.sekolah, row.tanggalMulai, row.tanggalSelesai, row.lamaMagang, row.nomorSertifikat || ""].join(",")
       )
       .join("\n");
 
-    const blob = new Blob(["NIM,Nama,Prodi,Sekolah\n" + csv], {
+    const blob = new Blob(["NIM,Nama,Prodi,Sekolah,Tanggal Mulai,Tanggal Selesai,Lama Magang,Nomor Sertifikat\n" + csv], {
       type: "text/csv",
     });
 
@@ -321,6 +352,16 @@ const SertifikatPage = () => {
 
   const handleCetakMagang = async (item) => {
     try {
+      // Check if nomor sertifikat is filled
+      if (!item.nomorSertifikat || item.nomorSertifikat.trim() === '') {
+        const confirmPrint = confirm(
+          `Nomor sertifikat untuk ${item.nama} belum diisi.\n\nApakah Anda yakin ingin melanjutkan cetak sertifikat?\n\nSertifikat akan menampilkan "No. [BELUM DIISI]"`
+        );
+        if (!confirmPrint) {
+          return;
+        }
+      }
+
       const res = await fetch("/api/template");
       const templates = await res.json();
       
@@ -349,6 +390,9 @@ const SertifikatPage = () => {
             // Customize fields based on the element ID and label
             if (el.label === "Nama Peserta") {
               return { ...el, value: item.nama };
+            }
+            else if (el.id === 2 || el.label === "Nomor Sertifikat" || el.label === "Nomor" || el.label.toLowerCase().includes("nomor") || el.label.toLowerCase().includes("no")) {
+              return { ...el, value: item.nomorSertifikat || "No. [BELUM DIISI]" };
             }
             else if (el.id === 5 && el.label === "Deskripsi") {
               // Ganti deskripsi dengan data peserta yang sesuai
@@ -417,7 +461,7 @@ const SertifikatPage = () => {
               };
 
               return {
-                id: data.length + index + 1,
+                id: data.length + 1,
                 nim: row?.["NIS/NPM"] || "",
                 nama: row?.["Nama"] || "",
                 prodi: row?.["Prodi"] || "",
@@ -425,6 +469,7 @@ const SertifikatPage = () => {
                 tanggalMulai: formatDate(row["Tanggal Mulai"]),
                 tanggalSelesai: formatDate(row["Tanggal Selesai"]),
                 lamaMagang: row["Lama Magang"] || "",
+                nomorSertifikat: row["Nomor Sertifikat"] || "",
               };
             });
           setData([...data, ...importedData]);
@@ -482,6 +527,7 @@ const SertifikatPage = () => {
           tanggalMulai: item.tanggalMulai,
           tanggalSelesai: item.tanggalSelesai,
           lamaMagang: item.lamaMagang,
+          nomorSertifikat: item.nomorSertifikat,
         }),
       });
 
@@ -546,6 +592,58 @@ const SertifikatPage = () => {
     } catch (error) {
       console.error("Error verifying certificate:", error);
       alert(`Gagal memverifikasi sertifikat: ${error.message}`);
+    }
+  };
+
+  // Fungsi untuk mengupdate nomor sertifikat
+  const handleUpdateNomorSertifikat = async (itemId, nomorSertifikat) => {
+    try {
+      if (!nomorSertifikat || nomorSertifikat.trim() === '') {
+        alert("Nomor sertifikat tidak boleh kosong");
+        return false;
+      }
+
+      console.log('Sending update request for ID:', itemId, 'with nomor:', nomorSertifikat);
+
+      const response = await fetch(`/api/intern/${itemId}/update-nomor-sertifikat`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nomorSertifikat: nomorSertifikat.trim() })
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response received:', textResponse);
+        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Response data:', result);
+
+      if (response.ok) {
+        // Update local state
+        setData(prevData => 
+          prevData.map(item => 
+            item.id === itemId 
+              ? { ...item, nomorSertifikat: nomorSertifikat.trim() } 
+              : item
+          )
+        );
+        return true;
+      } else {
+        throw new Error(result.message || "Gagal mengupdate nomor sertifikat");
+      }
+    } catch (error) {
+      console.error("Error updating nomor sertifikat:", error);
+      alert(`Gagal mengupdate nomor sertifikat: ${error.message}`);
+      return false;
     }
   };
 
@@ -716,6 +814,7 @@ const SertifikatPage = () => {
                     <th className="p-2">Tanggal Mulai</th>
                     <th className="p-2">Tanggal Selesai</th>
                     <th className="p-2">Lama Magang</th>
+                    <th className="p-2">Nomor Sertifikat</th>
                     <th className="p-2">Status</th>
                     <th className="p-2">Process</th>
                   </tr>
@@ -738,6 +837,15 @@ const SertifikatPage = () => {
                       <td className="p-2">{item.tanggalMulai}</td>
                       <td className="p-2">{item.tanggalSelesai}</td>
                       <td className="p-2">{item.lamaMagang}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          item.nomorSertifikat 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {item.nomorSertifikat || "Belum diisi"}
+                        </span>
+                      </td>
                       <td className="p-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           item.isSertifikatVerified 
@@ -874,9 +982,15 @@ const SertifikatPage = () => {
                     tanggalMulai: form.tanggalMulai.value,
                     tanggalSelesai: form.tanggalSelesai.value,
                     lamaMagang: lamaMagang,
+                    nomorSertifikat: nomorUrut ? generateNomorSertifikat(nomorUrut) : "",
                   };
                   setData([...data, newEntry]);
                   setShowAddForm(false);
+                  // Reset form
+                  setTanggalMulai("");
+                  setTanggalSelesai("");
+                  setLamaMagang("");
+                  setNomorUrut("");
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -1025,6 +1139,39 @@ const SertifikatPage = () => {
                       className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     />
                   </div>
+
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="nomorUrut"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Nomor Urut Sertifikat (1-9999)
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        id="nomorUrut"
+                        name="nomorUrut"
+                        type="number"
+                        min="1"
+                        max="9999"
+                        value={nomorUrut}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 9999)) {
+                            setNomorUrut(value);
+                          }
+                        }}
+                        placeholder="Contoh: 1, 25, 100"
+                        className="flex-1 border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      />
+                      <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-3 rounded border min-w-fit">
+                        {nomorUrut ? generateNomorSertifikat(nomorUrut) : 'XXXX/BPS/1871/KPG/2025'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Preview nomor sertifikat: {nomorUrut ? generateNomorSertifikat(nomorUrut) : 'Masukkan nomor urut untuk melihat preview'}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -1065,9 +1212,11 @@ const SertifikatPage = () => {
 
               {/* FORM EDIT DATA  */}
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   const form = e.target;
+                  
+                  // First update local state
                   const updated = {
                     ...editData,
                     nim: form.nim.value,
@@ -1077,7 +1226,16 @@ const SertifikatPage = () => {
                     tanggalMulai: editTanggalMulai,
                     tanggalSelesai: editTanggalSelesai,
                     lamaMagang: editLamaMagang,
+                    nomorSertifikat: editNomorSertifikat,
                   };
+
+                  // Update nomor sertifikat via API if intern has valid ID
+                  if (editData.hasValidId && editNomorSertifikat !== editData.nomorSertifikat) {
+                    const success = await handleUpdateNomorSertifikat(editData.id, editNomorSertifikat);
+                    if (!success) {
+                      return; // Don't close modal if API call failed
+                    }
+                  }
 
                   setData(data.map((d) => (d.id === updated.id ? updated : d)));
                   setShowEditModal(false);
@@ -1227,6 +1385,40 @@ const SertifikatPage = () => {
                       readOnly
                       className="w-full border border-gray-300 p-3 rounded-md bg-gray-100 text-gray-600"
                     />
+                  </div>
+
+                  <div className="mt-4 space-y-1">
+                    <label
+                      htmlFor="editNomorUrut"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Nomor Urut Sertifikat (1-9999)
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        id="editNomorUrut"
+                        name="editNomorUrut"
+                        type="number"
+                        min="1"
+                        max="9999"
+                        value={editNomorUrut}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 9999)) {
+                            setEditNomorUrut(value);
+                            setEditNomorSertifikat(value ? generateNomorSertifikat(value) : '');
+                          }
+                        }}
+                        placeholder="Contoh: 1, 25, 100"
+                        className="flex-1 border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      />
+                      <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-3 rounded border min-w-fit">
+                        {editNomorUrut ? generateNomorSertifikat(editNomorUrut) : 'XXXX/BPS/1871/KPG/2025'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Preview nomor sertifikat: {editNomorUrut ? generateNomorSertifikat(editNomorUrut) : 'Masukkan nomor urut untuk melihat preview'}
+                    </p>
                   </div>
                 </div>
 

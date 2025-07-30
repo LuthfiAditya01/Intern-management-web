@@ -15,6 +15,7 @@ export default function SertifikatSaya() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [userInternData, setUserInternData] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const sertifikatRef = useRef(null);
 
   // Fungsi untuk mendownload sertifikat sebagai gambar JPG
@@ -118,14 +119,24 @@ export default function SertifikatSaya() {
         // Tunggu hingga auth state siap
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
           if (user) {
-            // Dapatkan data intern berdasarkan user.uid
-            const res = await fetch("/api/intern");
+            // Dapatkan data intern berdasarkan user.uid dengan cache busting
+            const res = await fetch("/api/intern?" + new Date().getTime());
             const data = await res.json();
+
+            console.log("Fetched intern data for user:", data); // Debug log
+            console.log("Current user UID:", user.uid); // Debug log
+            console.log("Available interns:", data.interns.map(intern => ({ 
+              nama: intern.nama, 
+              userId: intern.userId, 
+              nomorSertifikat: intern.nomorSertifikat 
+            }))); // Debug log
 
             // Cari data intern yang cocok dengan user saat ini
             const myInternData = data.interns.find(
               (intern) => intern.userId === user.uid
             );
+
+            console.log("My intern data:", myInternData); // Debug log
 
             if (myInternData && myInternData.isSertifikatVerified) {
               setUserInternData(myInternData);
@@ -150,15 +161,51 @@ export default function SertifikatSaya() {
     fetchUserData();
   }, []);
 
+  // Fungsi untuk refresh data
+  const handleRefreshData = async () => {
+    setRefreshing(true);
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        // Fetch data terbaru dengan cache busting
+        const res = await fetch("/api/intern?" + new Date().getTime());
+        const data = await res.json();
+
+        console.log("Refreshed intern data:", data); // Debug log
+
+        const myInternData = data.interns.find(
+          (intern) => intern.userId === user.uid
+        );
+
+        console.log("My refreshed intern data:", myInternData); // Debug log
+
+        if (myInternData && myInternData.isSertifikatVerified) {
+          setUserInternData(myInternData);
+          await generateCertificate(myInternData);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Fungsi untuk generate sertifikat dari template
   const generateCertificate = async (internData) => {
     try {
+      console.log("Generating certificate with intern data:", internData); // Debug log
+      console.log("Nomor sertifikat from intern data:", internData.nomorSertifikat); // Debug log
+      
       const res = await fetch("/api/template");
       const templates = await res.json();
 
       if (Array.isArray(templates) && templates.length > 0) {
         // Ambil template DEFAULT
         const defaultTemplate = templates.find(t => t.status === "DEFAULT") || templates[0];
+        
+        console.log("Using template:", defaultTemplate); // Debug log
+        console.log("All template elements:", defaultTemplate.elements.map(el => ({ id: el.id, label: el.label }))); // Debug log
         
         // Format tanggal untuk tampilan sertifikat (contoh: 01 Januari 2025)
         const formatTanggalIndonesia = (dateStr) => {
@@ -189,9 +236,28 @@ export default function SertifikatSaya() {
         const customizedTemplate = {
           ...defaultTemplate,
           elements: defaultTemplate.elements.map((el) => {
+            console.log("Processing template element:", `ID: ${el.id}, Label: "${el.label}"`); // Debug log
+            
             // Customize fields based on the element ID and label
             if (el.label === "Nama Peserta") {
               return { ...el, value: internData.nama };
+            } else if (
+              // Match based on ID (from template structure, nomor is ID 2)
+              el.id === 2 || 
+              // Also match by label variations
+              el.label === "Nomor Sertifikat" || 
+              el.label === "No. Sertifikat" ||
+              el.label === "Nomor" ||
+              el.label === "No" ||
+              el.label === "Certificate Number" ||
+              el.label.toLowerCase().includes("nomor") || 
+              el.label.toLowerCase().includes("no.") ||
+              el.label.toLowerCase().includes("sertifikat") ||
+              el.label.toLowerCase().includes("certificate")
+            ) {
+              const nomorValue = internData.nomorSertifikat || "No. [BELUM DIISI]";
+              console.log(`🎯 FOUND NOMOR FIELD! ID: ${el.id}, Label: "${el.label}" -> Setting value to:`, nomorValue); // Debug log
+              return { ...el, value: nomorValue };
             } else if (el.id === 5 && el.label === "Deskripsi") {
               return {
                 ...el,
@@ -227,6 +293,7 @@ export default function SertifikatSaya() {
           }),
         };
 
+        console.log("Generated customized template:", customizedTemplate); // Debug log
         setSertifikat(customizedTemplate);
       }
     } catch (error) {
@@ -293,12 +360,44 @@ export default function SertifikatSaya() {
           <h1 className="text-2xl font-bold text-gray-800">
             Sertifikat Magang
           </h1>
-          <button
-            onClick={() => window.history.back()}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md transition-colors"
-          >
-            Kembali
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefreshData}
+              disabled={refreshing}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-md transition-colors flex items-center"
+            >
+              {refreshing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Memuat...
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Perbarui Data
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md transition-colors"
+            >
+              Kembali
+            </button>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -341,6 +440,21 @@ export default function SertifikatSaya() {
               </p>
               <p className="text-sm text-green-600 mt-1">
                 Sertifikat ini telah diverifikasi oleh admin BPS
+              </p>
+              {userInternData.nomorSertifikat && (
+                <p className="text-sm text-green-600 mt-1">
+                  <span className="font-semibold">Nomor Sertifikat: </span>
+                  {userInternData.nomorSertifikat}
+                </p>
+              )}
+              {!userInternData.nomorSertifikat && (
+                <p className="text-sm text-red-600 mt-1">
+                  <span className="font-semibold">Nomor Sertifikat: </span>
+                  Belum diisi oleh admin
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                Debug info - User ID: {userInternData.userId} | Nama: {userInternData.nama}
               </p>
             </div>
           )}
