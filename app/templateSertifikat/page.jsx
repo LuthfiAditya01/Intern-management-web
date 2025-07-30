@@ -7,112 +7,56 @@ export default function TemplatePage() {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showEditElement, setShowEditElement] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  // Update elemen-elemen template dengan posisi centered
+  // Fetch templates dari MongoDB
   useEffect(() => {
-    const defaultTemplate = {
-      id: 1,
-      nama: "MAGANG/KP/PKL",
-      status: "DEFAULT",
-      imageUrl: "/uploads/ornamen.png",
-      elements: [
-        {
-          id: 1,
-          label: "Judul",
-          value: "SERTIFIKAT",
-          top: 27,
-          left: 50, // Ubah ke 50% untuk center
-          fontSize: 25,
-          fontWeight: "bold",
-          textAlign: "center",
-          transform: "translateX(-50%)", // Untuk perfect centering
-        },
-        {
-          id: 2,
-          label: "Nomor",
-          value: "NO: 0001/BPS/1871/KPG/2025",
-          top: 60,
-          left: 50,
-          fontSize: 15,
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 3,
-          label: "Sub Judul",
-          value: "diberikan kepada:",
-          top: 102,
-          left: 50,
-          fontSize: 13,
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 4,
-          label: "Nama Peserta",
-          value: "Nama Peserta",
-          top: 125,
-          left: 50,
-          fontSize: 28,
-          fontFamily: "Great Vibes, cursive",
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 5,
-          label: "Deskripsi",
-          value:
-            "atas partisipasinya dalam kegiatan Magang/KP/PKL di lingkungan BPS Kota Bandar Lampung periode 16 Juni sampai 01 Agustus 2025",
-          top: 174,
-          left: 50,
-          fontSize: 13,
-          maxWidth: 500, // Perlebar maxWidth
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 6,
-          label: "Tanggal",
-          value: "Bandar Lampung, 05 Agustus 2025",
-          top: 257,
-          left: 50,
-          fontSize: 13,
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 7,
-          label: "Jabatan",
-          value: "Kepala Badan Pusat Statistik Kota Bandar Lampung",
-          top: 292,
-          left: 50,
-          fontSize: 13,
-          fontWeight: "bold",
-          maxWidth: 300,
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-        {
-          id: 8,
-          label: "Nama Penandatangan",
-          value: "Dr. Hady Suryono, M.Si",
-          top: 390,
-          left: 50,
-          fontSize: 13,
-          fontWeight: "bold",
-          textAlign: "center",
-          transform: "translateX(-50%)",
-        },
-      ],
-    };
-
-    setTemplates([defaultTemplate]);
+    fetchTemplates();
   }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch("/api/template");
+      const data = await res.json();
+      setTemplates(data);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    }
+  };
+
+  const handleCleanupTemplates = async () => {
+    if (!confirm("Apakah kamu yakin ingin menghapus semua template kecuali DEFAULT?")) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/template/cleanup", {
+        method: "DELETE"
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to clean up templates");
+      }
+      
+      const data = await res.json();
+      setMessage(data.message);
+      // Refresh templates after cleanup
+      fetchTemplates();
+    } catch (error) {
+      console.error("Error cleaning up templates:", error);
+      setMessage("Gagal menghapus template");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(""), 5000); // Clear message after 5 seconds
+    }
+  };
 
   const handleSetDefault = (id) => {
     setTemplates((prevTemplates) =>
       prevTemplates.map((template) =>
-        template.id === id
+        template._id === id
           ? { ...template, status: "DEFAULT" }
           : { ...template, status: "NON" }
       )
@@ -128,7 +72,7 @@ export default function TemplatePage() {
     e.preventDefault();
     try {
       const res = await fetch("/api/template", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
@@ -137,9 +81,11 @@ export default function TemplatePage() {
 
       if (!res.ok) throw new Error("Failed to save template");
 
+      const updatedTemplate = await res.json();
+      
       setTemplates((prevTemplates) =>
         prevTemplates.map((template) =>
-          template.id === selectedTemplate.id ? selectedTemplate : template
+          template._id === updatedTemplate._id ? updatedTemplate : template
         )
       );
       setShowEditElement(false);
@@ -157,14 +103,32 @@ export default function TemplatePage() {
       />
 
       <div className="bg-white rounded-xl shadow-lg border md:max-w-7xl mx-auto border-gray-100 p-2.5 md:p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div className="flex-1">
-            <h1 className="text-2xl font-semibold mb-4">Template Sertifikat</h1>
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-t">
-              Data Template
-            </div>
+            <h1 className="text-2xl font-semibold">Template Sertifikat</h1>
+          </div>
+          <div>
+            <button 
+              onClick={handleCleanupTemplates}
+              disabled={loading}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+            >
+              {loading ? "Processing..." : "Hapus Template Non-Default"}
+            </button>
+          </div>
+        </div>
 
-            <div className="overflow-x-auto border">
+        {message && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4">
+            {message}
+          </div>
+        )}
+
+        <div className="bg-blue-600 text-white px-4 py-2 rounded-t">
+          Data Template
+        </div>
+
+        <div className="overflow-x-auto border">
               <table className="w-full table-auto text-sm">
                 <thead className="bg-blue-200 text-left">
                   <tr>
@@ -176,40 +140,40 @@ export default function TemplatePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {templates.map((template, index) => (
-                    <tr key={index} className="border-t">
-                      <td className="px-4 py-2">{template.id}</td>
-                      <td className="px-4 py-2">
-                        {template.imageUrl ? (
-                          <img
-                            src={template.imageUrl}
-                            alt="Template"
-                            className="w-40 border"
-                          />
-                        ) : (
-                          <span>-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 font-bold text-blue-600">
-                        {template.status}
-                      </td>
-                      <td className="px-4 py-2">{template.nama}</td>
-                      <td className="px-4 py-2 space-x-2">
-                        {/* <button
-                          className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
-                          onClick={() => handleSetDefault(template.id)}
-                        >
-                          ATUR DEFAULT
-                        </button> */}
-                        <button
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs cursor-pointer"
-                          onClick={() => handleOpenEditElement(template)}
-                        >
-                          ELEMENT
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                                  {templates.map((template, index) => (
+                  <tr key={template._id} className="border-t">
+                    <td className="px-4 py-2">{index + 1}</td>
+                    <td className="px-4 py-2">
+                      {template.imageUrl ? (
+                        <img
+                          src={template.imageUrl}
+                          alt="Template"
+                          className="w-40 border"
+                        />
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 font-bold text-blue-600">
+                      {template.status}
+                    </td>
+                    <td className="px-4 py-2">{template.nama}</td>
+                    <td className="px-4 py-2 space-x-2">
+                      {/* <button
+                        className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
+                        onClick={() => handleSetDefault(template._id)}
+                      >
+                        ATUR DEFAULT
+                      </button> */}
+                      <button
+                        className="bg-blue-500 text-white px-2 py-1 rounded text-xs cursor-pointer"
+                        onClick={() => handleOpenEditElement(template)}
+                      >
+                        ELEMENT
+                      </button>
+                    </td>
+                  </tr>
+                ))}
                 </tbody>
               </table>
               <div className="p-2 text-sm text-gray-600">
@@ -217,8 +181,6 @@ export default function TemplatePage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Modal Edit Element */}
       {showEditElement && selectedTemplate && (

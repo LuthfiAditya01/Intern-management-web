@@ -6,6 +6,7 @@ import { React, useEffect, useState } from "react";
 import axios from "axios";
 import SignOutButton from "./signOutButton";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // Added missing Link import
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -27,46 +28,42 @@ const isLate = (timeString) => {
 };
 
 export default function Dashboard() {
-  
-  // Modal component for izin details
+  // Modal component buat detail izin, biar vibes-nya tetep jaksel
   const IzinModal = ({ isOpen, onClose, izinData }) => {
     if (!isOpen || !izinData) return null;
-    
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold">Detail Izin</h3>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 text-2xl"
             >
               &times;
             </button>
           </div>
-          
+
           <div className="space-y-3">
             <div>
               <p className="text-sm text-gray-500">Jenis Izin</p>
               <p className="font-medium capitalize">{izinData.keteranganIzin}</p>
             </div>
-            
             <div>
               <p className="text-sm text-gray-500">Tanggal</p>
               <p className="font-medium">{formatDate(izinData.izinDate)}</p>
             </div>
-            
             <div>
               <p className="text-sm text-gray-500">Keterangan</p>
               <p className="font-medium">{izinData.messageIzin}</p>
             </div>
-            
             {izinData.linkBukti && (
               <div>
                 <p className="text-sm text-gray-500">Bukti</p>
-                <a 
-                  href={izinData.linkBukti} 
-                  target="_blank" 
+                <a
+                  href={izinData.linkBukti}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline"
                 >
@@ -74,7 +71,6 @@ export default function Dashboard() {
                 </a>
               </div>
             )}
-            
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={onClose}
@@ -87,7 +83,7 @@ export default function Dashboard() {
         </div>
       </div>
     );
-  }
+  };
 
   const [interns, setInterns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +106,7 @@ export default function Dashboard() {
   const [isIzin, setIsIzin] = useState(null);
   const [izinData, setIzinData] = useState(null);
   const [showIzinModal, setShowIzinModal] = useState(false);
+  const [hasCertificate, setHasCertificate] = useState(false);
 
   const route = useRouter();
 
@@ -309,6 +306,23 @@ export default function Dashboard() {
     };
 
     fetchGrade();
+  }, [userInternData]);
+
+  useEffect(() => {
+    const checkCertificateStatus = async () => {
+      if (!userInternData) return;
+
+      try {
+        // Cek langsung flag isSertifikatVerified dari userInternData
+        setHasCertificate(userInternData.isSertifikatVerified === true);
+        console.log("Certificate status:", userInternData.isSertifikatVerified);
+      } catch (error) {
+        console.error("Error checking certificate status:", error);
+        setHasCertificate(false);
+      }
+    };
+
+    checkCertificateStatus();
   }, [userInternData]);
 
   const activeCount = interns.filter((i) => i.status === "aktif").length;
@@ -521,14 +535,14 @@ export default function Dashboard() {
                   color="green"
                 />
                 <MenuCard
-                  onClick={() => handleMenuClick("/divisi")}
+                  onClick={() => handleMenuClick("/templateSertifikat")}
                   icon="🎨"
                   title="Template Sertifikat"
                   description="Atur Template Sertifikat"
                   color="purple"
                 />
                 <MenuCard
-                  onClick={() => handleMenuClick("/quotaManagement")}
+                  onClick={() => handleMenuClick("/sertifikat")}
                   icon="✅"
                   title="Verifikasi Sertifikat"
                   description="Verifikasi Peserta yang mendapatkan sertifikat"
@@ -707,6 +721,15 @@ export default function Dashboard() {
                     description="Lihat histori Izin"
                     color="green"
                   />
+                  {hasCertificate && (
+                    <MenuCard
+                      onClick={() => handleMenuClick("/sertifikatSaya")}
+                      icon="📜"
+                      title="Sertifikat"
+                      description="Lihat dan unduh sertifikatmu"
+                      color="green"
+                    />
+                  )}
                 </div>
               </div>
             )}
