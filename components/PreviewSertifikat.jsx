@@ -99,7 +99,7 @@ export default function SertifikatPreview({ template }) {
           key={el.id}
           style={{
             position: "absolute",
-            top: el.top ? `${el.top}px` : "0px",
+            top: el.top ? `${el.top - 50}px` : "0px", // Subtract 30px to move elements up
             left: el.left ? `${el.left}%` : "0%",
             transform: el.transform || "translateX(-50%)",
             fontSize: el.fontSize ? `${el.fontSize}px` : "16px",

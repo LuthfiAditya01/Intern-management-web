@@ -16,17 +16,17 @@ export async function GET() {
     
     // Default positions
     const defaultPositions = {
-      "Judul": 47,
-      "SERTIFIKAT": 47,
-      "Nomor": 80,
-      "Sub Judul": 122,
-      "diberikan kepada:": 122,
-      "Nama Peserta": 145,
-      "Nama": 145, 
-      "Deskripsi": 194,
-      "Tanggal": 277,
-      "Jabatan": 312,
-      "Nama Penandatangan": 410
+      "Judul": 10,
+      "SERTIFIKAT": 10,
+      "Nomor": 50,
+      "Sub Judul": 90,
+      "diberikan kepada:": 90,
+      "Nama Peserta": 115,
+      "Nama": 115, 
+      "Deskripsi": 160,
+      "Tanggal": 230,
+      "Jabatan": 265,
+      "Nama Penandatangan": 360
     };
     
     const updatePromises = templates.map(async (template) => {
