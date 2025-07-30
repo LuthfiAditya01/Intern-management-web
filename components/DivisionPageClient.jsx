@@ -92,13 +92,13 @@ export default function DivisionPageClient({ interns }) {
                                 Informasi Tim & Penempatan
                             </h1>
                             <p className="text-gray-600">
-                                Kelola dan pantau distribusi anak magang di setiap tim
+                                Kelola dan pantau distribusi peserta magang di setiap tim
                             </p>
                         </div>
                         <div className="flex justify-center space-x-8 text-center">
                             <div>
                                 <p className="text-2xl font-bold text-blue-600">{totalInterns}</p>
-                                <p className="text-sm text-gray-600">Total Anak Magang</p>
+                                <p className="text-sm text-gray-600">Total Peserta Magang</p>
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-purple-600">{totalDivisions}</p>

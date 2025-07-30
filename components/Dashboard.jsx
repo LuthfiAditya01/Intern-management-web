@@ -28,7 +28,7 @@ const isLate = (timeString) => {
 };
 
 export default function Dashboard() {
-  // Modal component buat detail izin, biar vibes-nya tetep jaksel
+  // Modal component for izin details
   const IzinModal = ({ isOpen, onClose, izinData }) => {
     if (!isOpen || !izinData) return null;
 
@@ -97,7 +97,7 @@ export default function Dashboard() {
   const [userInternData, setUserInternData] = useState(null);
   const [pageLoading, setPageLoading] = useState(false);
   const [userGrade, setUserGrade] = useState("-");
-  const [userMentor, setUserMentor] = useState("-");
+  const [userMentor, setUserMentor] = useState('-')
   const [mentor, setMentor] = useState([]);
   const [currentMentorData, setCurrentMentorData] = useState(null);
   const [menteeCount, setMenteeCount] = useState(0);
