@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../libs/postgresql';
+import { sequelize } from '../libs/postgresql.js';
 
 const GeofenceLocation = sequelize.define('GeofenceLocation', {
     latitude: {
