@@ -71,6 +71,10 @@ const Intern = sequelize.define('Intern', {
       key: 'id',
     },
   },
+  isTemporary: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   timestamps: true,
 });

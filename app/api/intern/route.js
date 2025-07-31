@@ -53,7 +53,7 @@ export async function GET(request) {
             order: [['nama', 'ASC']]
         });
 
-        return NextResponse.json({ interns });
+        return NextResponse.json();
     } catch (error) {
         console.error("GET Error:", error);
         return NextResponse.json(
@@ -65,8 +65,12 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
+        console.log("POST request received");
         await connectPostgreSQL();
+        console.log("Database connected");
+        
         const body = await request.json();
+        console.log("Request body:", body);
         const {
             nama, nim, nik, prodi, kampus,
             tanggalMulai, tanggalSelesai, userId, email
@@ -123,20 +127,13 @@ export async function POST(request) {
         }, { status: 201 });
 
     } catch (error) {
-        // ... (Error handling Anda yang lain sudah bagus) ...
         console.error("POST Error details:", error);
-        if (error.name === 'SequelizeUniqueConstraintError') {
-            const field = error.errors[0].path;
-            return NextResponse.json(
-                { message: `${field.charAt(0).toUpperCase() + field.slice(1)} yang Anda masukkan sudah terdaftar.` },
-                { status: 409 }
-            );
-        }
+        console.error("Error stack:", error.stack);
         return NextResponse.json({
-            message: "Terjadi kesalahan pada server.",
-            error: error.message
+          message: "Terjadi kesalahan pada server.",
+          error: error.message
         }, { status: 500 });
-    }
+      }
 }
 
 export async function DELETE(request) {

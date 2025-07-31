@@ -17,19 +17,30 @@ export async function POST(request) {
 
     await connectPostgreSQL();
 
-    // Gunakan Sequelize findOrCreate.
-    // Ini adalah cara paling efisien: cari pengguna berdasarkan firebaseUid.
-    // Jika tidak ada, buat pengguna baru dengan data dari 'defaults'.
-    const [user, created] = await User.findOrCreate({
-      where: { firebaseUid: firebaseUid },
-      defaults: {
+    // Cari pengguna berdasarkan email terlebih dahulu (untuk handle kasus temporary users)
+    let user = await User.findOne({ where: { email: email } });
+    let created = false;
+    
+    if (user && user.isTemporary) {
+      // Jika user ditemukan tapi masih temporary, update dengan firebaseUid yang sebenarnya
+      await user.update({
         firebaseUid: firebaseUid,
-        email: email,
-        username: username || email.split('@')[0], // Gunakan username jika ada, jika tidak, gunakan bagian email
-        role: 'intern', // Role default untuk pengguna baru
-        // Kolom 'password' bisa dikosongkan karena kita sudah membuatnya opsional
-      },
-    });
+        isTemporary: false
+      });
+      console.log(`Updated temporary user: ${user.email} with Firebase UID: ${firebaseUid}`);
+    } else if (!user) {
+      // Jika tidak ada user dengan email tersebut, buat baru
+      [user, created] = await User.findOrCreate({
+        where: { firebaseUid: firebaseUid },
+        defaults: {
+          firebaseUid: firebaseUid,
+          email: email,
+          username: username || email.split('@')[0], // Gunakan username jika ada, jika tidak, gunakan bagian email
+          role: 'intern', // Role default untuk pengguna baru
+          isTemporary: false
+        },
+      });
+    }
 
     // `created` adalah boolean (true jika user baru dibuat, false jika sudah ada)
     console.log(`User sync: ${user.email}, Created: ${created}`);

@@ -5,9 +5,10 @@ import pg from 'pg';
 // ===================================================================
 
 const sequelize = new Sequelize(
-  process.env.POSTGRES_DB || 'intern_management',
+  process.env.POSTGRES_DB || 'intern-management',
   process.env.POSTGRES_USER || 'postgres',
-  process.env.POSTGRES_PASSWORD || 'password',
+//   process.env.POSTGRES_PASSWORD || 'password',
+  process.env.POSTGRES_PASSWORD || '',
   {
     host: process.env.POSTGRES_HOST || 'localhost',
     port: process.env.POSTGRES_PORT || 5432,

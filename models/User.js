@@ -34,8 +34,13 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('admin', 'mentor', 'intern'),
     defaultValue: 'intern',
   },
+  isTemporary: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   timestamps: true,
+  underscored: true,
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {

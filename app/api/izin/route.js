@@ -36,6 +36,8 @@ export async function POST(request) {
     }, { status: 201 });
   } catch (error) {
     console.error("Error menyimpan izin:", error);
+    console.error("Error Details : ", error.message)
+    console.error("Error Stack : ", error.stack)
     return NextResponse.json({ error: "Terjadi kesalahan saat menyimpan izin" }, { status: 500 });
   }
 }
@@ -44,13 +46,24 @@ export async function GET(request) {
   try {
     await connectPostgreSQL();
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const firebaseUid = searchParams.get("userId");
     const date = searchParams.get("date");
 
-    let whereClause = {};
-    if (userId) {
-      whereClause.userId = userId;
+    // First, find the user with this Firebase UID
+    const user = await User.findOne({
+      where: { firebaseUid: firebaseUid }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    // Now use the actual database UUID
+    let whereClause = {};
+    if (user) {
+      whereClause.userId = user.id; // This is the UUID from your database
+    }
+    
     if (date) {
       const startDate = new Date(date);
       const endDate = new Date(date);
@@ -58,7 +71,7 @@ export async function GET(request) {
       whereClause.izinDate = { [Op.gte]: startDate, [Op.lt]: endDate };
     }
 
-    // Ambil izin dan join ke User untuk nama
+    // Rest of your code remains the same
     const izinData = await Izin.findAll({
       where: whereClause,
       order: [['izinDate', 'DESC']],

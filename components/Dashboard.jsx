@@ -102,7 +102,7 @@ export default function Dashboard() {
   const [pageLoading, setPageLoading] = useState(false);
   const [userGrade, setUserGrade] = useState("-");
   const [userMentor, setUserMentor] = useState("-");
-  const [mentor, setMentor] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [currentMentorData, setCurrentMentorData] = useState(null);
   const [menteeCount, setMenteeCount] = useState(0);
   const [waktuHadir, setWaktuHadir] = useState(null);
@@ -242,27 +242,87 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (user && interns && interns.length > 0) {
-      const me_intern = interns.find((i) => i.user?.email?.toLowerCase() === user.email?.toLowerCase());
-      if (me_intern) {
-        setUserInternData(me_intern);
-        console.log("Isi dari userInternData adalah : ", userInternData);
-        setUserStatus(me.status ?? "pending");
-        setUserDivision(me.divisi ?? "-");
-        setUserMentor(me.pembimbing?.nama ?? "-");
-        setUserPeriod(`${formatDate(me.tanggalMulai)} s.d. ${formatDate(me.tanggalSelesai)}`);
-      }
-    }
-  }, [user, interns]);
+     if (user && interns && interns.length > 0) {
+       console.log("Mencari intern dengan email:", user.email);
+       console.log("Daftar intern (detail):", JSON.stringify(interns, null, 2));
+       
+       // Coba berbagai kemungkinan struktur data
+       let me_intern = null;
+       
+       // Kemungkinan 1: email ada di internUser.email
+       me_intern = interns.find((i) => 
+         i.internUser?.email?.toLowerCase() === user.email?.toLowerCase()
+       );
+       
+       // Kemungkinan 2: email ada di email langsung
+       if (!me_intern) {
+         me_intern = interns.find((i) => 
+           i.email?.toLowerCase() === user.email?.toLowerCase()
+         );
+       }
+       
+       // Kemungkinan 3: email ada di user.email
+       if (!me_intern) {
+         me_intern = interns.find((i) => 
+           i.user?.email?.toLowerCase() === user.email?.toLowerCase()
+         );
+       }
+       
+       console.log("Hasil pencarian:", me_intern);
+       
+       if (me_intern) {
+         setUserInternData(me_intern);
+         console.log("Isi dari userInternData adalah : ", me_intern);
+         setUserStatus(me_intern.status ?? "pending");
+         setUserDivision(me_intern.divisi ?? "-");
+         setUserMentor(me_intern.pembimbing?.nama ?? "-");
+         setUserPeriod(`${formatDate(me_intern.tanggalMulai)} s.d. ${formatDate(me_intern.tanggalSelesai)}`);
+       } else {
+         console.log("Tidak menemukan data intern untuk user:", user.email);
+         console.log("Email yang tersedia:", interns.map(i => {
+          return {
+            internUser: i.internUser?.email,
+            email: i.email,
+            user: i.user?.email
+          };
+        }));
+       }
+     }
+   }, [user, interns]);
 
-  useEffect(() => {
-    if (user && mentor && mentor.length > 0) {
-      const me_mentor = mentors.find((m) => m.user?.email?.toLowerCase() === user.email?.toLowerCase());
+   useEffect(() => {
+    if (user && mentors && mentors.length > 0) {
+      console.log("Daftar mentor (detail):", JSON.stringify(mentors, null, 2));
+      
+      // Coba berbagai kemungkinan struktur data
+      let me_mentor = null;
+      
+      // Kemungkinan 1: email ada di mentorUser.email
+      me_mentor = mentors.find((m) => 
+        m.mentorUser?.email?.toLowerCase() === user.email?.toLowerCase()
+      );
+      
+      // Kemungkinan 2: email ada di email langsung
+      if (!me_mentor) {
+        me_mentor = mentors.find((m) => 
+          m.email?.toLowerCase() === user.email?.toLowerCase()
+        );
+      }
+      
+      // Kemungkinan 3: email ada di user.email
+      if (!me_mentor) {
+        me_mentor = mentors.find((m) => 
+          m.user?.email?.toLowerCase() === user.email?.toLowerCase()
+        );
+      }
+      
+      console.log("Hasil pencarian mentor:", me_mentor);
+      
       if (me_mentor) {
         setCurrentMentorData(me_mentor);
       }
     }
-  }, [user, mentor]);
+  }, [user, mentors]);
 
   useEffect(() => {
     if (isPembimbing && currentMentorData && interns.length > 0) {
@@ -279,6 +339,7 @@ export default function Dashboard() {
     async function fetchInterns() {
       try {
         const res = await axios.get("/api/intern");
+        console.log("Respons API intern:", res.data);
         setInterns(res.data.interns);
       } catch (error) {
         console.error("Failed to fetch interns:", error);
@@ -580,55 +641,57 @@ export default function Dashboard() {
             {/* Statistics Cards */}
             {userInternData && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {izinData ? (
-                  // Show izin card if user has izin today
-                  <div 
-                    onClick={() => setShowIzinModal(true)}
-                    className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer lg:col-span-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Status Kehadiran Hari Ini</p>
-                        <p className="text-3xl capitalize font-bold text-yellow-600">
-                          {izinData.keteranganIzin === 'sakit' ? 'Sakit' : 
-                          izinData.keteranganIzin === 'izin' ? 'Izin' : 'Tidak Hadir'}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">Klik untuk detail</p>
+                {userStatus === "Pending" && (
+                  izinData ? (
+                    // Show izin card if user has izin today
+                    <div 
+                      onClick={() => setShowIzinModal(true)}
+                      className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer lg:col-span-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Status Kehadiran Hari Ini</p>
+                          <p className="text-3xl capitalize font-bold text-yellow-600">
+                            {izinData.keteranganIzin === 'sakit' ? 'Sakit' : 
+                            izinData.keteranganIzin === 'izin' ? 'Izin' : 'Tidak Hadir'}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">Klik untuk detail</p>
+                        </div>
+                        <div className="select-none text-4xl bg-yellow-50 p-3 rounded-full">
+                          {izinData.keteranganIzin === 'sakit' ? '🤒' : 
+                          izinData.keteranganIzin === 'izin' ? '📝' : '🏠'}
+                        </div>
                       </div>
-                      <div className="select-none text-4xl bg-yellow-50 p-3 rounded-full">
-                        {izinData.keteranganIzin === 'sakit' ? '🤒' : 
-                        izinData.keteranganIzin === 'izin' ? '📝' : '🏠'}
+                    </div>
+                  ) : (
+                    // Show regular attendance cards if no izin
+                    <div className="flex flex-col md:flex-row gap-6 lg:col-span-2">
+                      <div className="w-full md:w-1/2">
+                        <StatCard
+                          title="Waktu Absen Datang"
+                          value={<span className={isLate(waktuHadir) ? "text-red-500" : "text-green-400"}>{waktuHadir || "Belum absen"}</span>}
+                          icon={
+                            <img
+                              src={"/assets/image/start.png"}
+                              className={"w-[50px]"}
+                            />
+                          }
+                        />
+                      </div>
+                      <div className="w-full md:w-1/2">
+                        <StatCard
+                          title="Waktu Absen Pulang"
+                          value={waktuPulang || "Belum checkout"}
+                          icon={
+                            <img
+                              src={"/assets/image/finish.png"}
+                              className={"w-[50px]"}
+                            />
+                          }
+                        />
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  // Show regular attendance cards if no izin
-                  <div className="flex flex-col md:flex-row gap-6 lg:col-span-2">
-                    <div className="w-full md:w-1/2">
-                      <StatCard
-                        title="Waktu Absen Datang"
-                        value={<span className={isLate(waktuHadir) ? "text-red-500" : "text-green-400"}>{waktuHadir || "Belum absen"}</span>}
-                        icon={
-                          <img
-                            src={"/assets/image/start.png"}
-                            className={"w-[50px]"}
-                          />
-                        }
-                      />
-                    </div>
-                    <div className="w-full md:w-1/2">
-                      <StatCard
-                        title="Waktu Absen Pulang"
-                        value={waktuPulang || "Belum checkout"}
-                        icon={
-                          <img
-                            src={"/assets/image/finish.png"}
-                            className={"w-[50px]"}
-                          />
-                        }
-                      />
-                    </div>
-                  </div>
+                  )
                 )}
                 <StatCard
                   title="Status Magang Kamu"
