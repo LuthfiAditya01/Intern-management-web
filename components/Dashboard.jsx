@@ -231,7 +231,7 @@ export default function Dashboard() {
     async function fetchMentors() {
       try {
         const res = await axios.get("/api/mentor");
-        setMentors(res.data.mentors || []);
+        setMentor(res.data.mentors || []);
       } catch (error) {
         console.error("Failed to fetch mentors:", error);
       } finally {
@@ -257,7 +257,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user && mentor && mentor.length > 0) {
-      const me_mentor = mentors.find((m) => m.user?.email?.toLowerCase() === user.email?.toLowerCase());
+      const me_mentor = mentor.find((m) => m.user?.email?.toLowerCase() === user.email?.toLowerCase());
       if (me_mentor) {
         setCurrentMentorData(me_mentor);
       }

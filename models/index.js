@@ -10,5 +10,5 @@ export { default as Quota } from './Quota.js';
 export { default as Izin } from './Izin.js';
 export { default as DaftarHadir } from './DaftarHadir.js';
 export { default as GeoFencing } from './GeoFencing.js';
-export { default as Sertifikat } from './Sertifikat.js';
+export { default as Sertifikat } from './sertifikat.js';
 export { default as SertifikatTemplate } from './SertifikatTemplate.js'; 

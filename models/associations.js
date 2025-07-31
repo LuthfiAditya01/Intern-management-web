@@ -6,7 +6,7 @@ import Quota from './Quota.js';
 import Izin from './Izin.js';
 import DaftarHadir from './DaftarHadir.js';
 import GeoFencing from './GeoFencing.js';
-import Sertifikat from './Sertifikat.js';
+import Sertifikat from './sertifikat.js';
 import SertifikatTemplate from './SertifikatTemplate.js';
 
 // User Associations
