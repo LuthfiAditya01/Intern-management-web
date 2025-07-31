@@ -4,18 +4,53 @@ import { Mentor, User } from "../../../models/index.js";
 
 export async function GET() {
     try {
+        // Temporary mock response for testing while database is being set up
+        const mockMentors = [
+            {
+                id: 1,
+                nama: "Test Mentor 1",
+                nip: "123456789",
+                email: "mentor1@test.com",
+                divisi: "IT",
+                status: "aktif",
+                mentorUser: {
+                    username: "mentor1",
+                    email: "mentor1@test.com",
+                    role: "mentor"
+                }
+            },
+            {
+                id: 2,
+                nama: "Test Mentor 2", 
+                nip: "987654321",
+                email: "mentor2@test.com",
+                divisi: "HR",
+                status: "aktif",
+                mentorUser: {
+                    username: "mentor2",
+                    email: "mentor2@test.com",
+                    role: "mentor"
+                }
+            }
+        ];
+        
+        return NextResponse.json({ mentors: mockMentors }, {status: 200});
+        
+        // Original database code (commented out temporarily)
+        /*
         await connectPostgreSQL();
         const mentors = await Mentor.findAll({
-            attributes: ['id', 'nama', 'nip', 'email', 'divisi', 'status'], // PERBAIKAN: Tambahkan atribut yang diperlukan
+            attributes: ['id', 'nama', 'nip', 'email', 'divisi', 'status'],
             include: [
         {
             model: User,
-            as: 'mentorUser', // PERBAIKAN: Ubah dari 'user' ke 'mentorUser' sesuai associations.js
+            as: 'mentorUser',
             attributes: ['username', 'email', 'role']
         }
     ]
 });
         return NextResponse.json({ mentors }, {status: 200});
+        */
     } catch (error) {
         console.error("GET mentors error:", error);
         return NextResponse.json({ message: "Gagal mengambil data pembimbing.", error: error.message }, { status: 500 });
