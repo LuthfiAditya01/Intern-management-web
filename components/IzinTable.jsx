@@ -18,6 +18,20 @@ export default function IzinTable() {
   const [viewMode, setViewMode] = useState("list"); // "list" or "detail"
   const [userInternData, setUserInternData] = useState(null);
 
+  const fetchUserInternData = async (queryParam) => {
+    try {
+      const response = await axios.get(`/api/intern?${queryParam}`);
+      if (response.data?.interns?.length > 0) {
+        console.log("✅ Intern ditemukan:", response.data.interns[0].nama);
+        setUserInternData(response.data.interns[0]);
+      } else {
+        console.warn("⚠️ Intern tidak ditemukan dengan query:", queryParam);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching intern data:", err);
+    }
+  };
+
   // Auth state dan role management
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -27,7 +41,7 @@ export default function IzinTable() {
           const token = await user.getIdTokenResult();
           setUserId(token.claims.user_id);
           setRole(token.claims.role);
-          
+
           // Log role status
           if (token.claims.role === "admin") {
             console.log("👑 Ini admin");
@@ -65,9 +79,9 @@ export default function IzinTable() {
     try {
       const url = "/api/izin";
       const config = { params: { userId: internId } };
-      
+
       console.log(`Fetching izin data for intern ID: ${internId}`);
-      
+
       const response = await axios.get(url, config);
       setData(response.data.izin?.length ? response.data : { izin: [] });
       setNullLength(!response.data.izin?.length);
@@ -86,17 +100,39 @@ export default function IzinTable() {
     if (!userId || role === null || role === "admin") return; // skip for admins
 
     const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`/api/intern?email=${user.email}`);
-        if (response.data && response.data.interns && response.data.interns.length > 0) {
-          setUserInternData(response.data.interns[0]);
+      // try {
+      //   // Gunakan userId daripada email
+      //   const response = await axios.get(`/api/intern`);
+      //   console.log("Debug - Fetching with userId:", userId);
+
+      //   if (response.data && response.data.interns && response.data.interns.length > 0) {
+      //     console.log("Debug - Found intern data:", response.data.interns[0].nama);
+      //     setUserInternData(response.data.interns[0]);
+      //   } else {
+      //     console.log("Debug - No data found with userId, trying email as fallback");
+      //     // Fallback ke email jika userId tidak ditemukan
+      //     const emailResponse = await axios.get(`/api/intern?email=${user.email}`);
+      //     if (emailResponse.data && emailResponse.data.interns && emailResponse.data.interns.length > 0) {
+      //       console.log("Debug - Found intern data with email:", emailResponse.data.interns[0].nama);
+      //       setUserInternData(emailResponse.data.interns[0]);
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.error("Error fetching user data:", error);
+      // }
+
+      const fetchData = async () => {
+        // Coba cari pake userId dulu, fallback ke email
+        await fetchUserInternData(`userId=${userId}`);
+        if (!userInternData && user?.email) {
+          await fetchUserInternData(`email=${user.email}`);
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
+      };
+
+      fetchData();
     };
 
-    if (user && user.email) {
+    if (user && userId) {
       fetchUserData();
     }
   }, [userId, role, user]);
@@ -107,12 +143,13 @@ export default function IzinTable() {
 
     const fetchAll = async () => {
       try {
-        const url = "/api/izin";
-        const config = { params: { userId } };
+        // const url = "/api/izin";
+        // const config = { params: { email : user.email } };
+        const response = await axios.get(`/api/intern?userId=${userId}`);
 
         console.log(`Fetching izin data untuk user ${userId}…`);
 
-        const response = await axios.get(url, config);
+        // const response = await axios.get(url, config);
         if (response.data && response.data.izin?.length) {
           setData(response.data);
           setNullLength(false);
@@ -130,7 +167,7 @@ export default function IzinTable() {
     };
 
     fetchAll();
-  }, [userId, role]);
+  }, [user, role]);
 
   // For back button in detail view
   const goBackToInternList = () => {
@@ -142,18 +179,18 @@ export default function IzinTable() {
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     if (isNaN(date)) return "-";
-    
+
     const day = date.getDate();
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     const month = monthNames[date.getMonth()];
     const year = date.getFullYear();
-    
+
     return `${day} ${month} ${year}`;
   };
 
   // Mendapatkan status color badge
   const getStatusColor = (status) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case "disetujui":
         return "bg-green-100 text-green-800";
       case "ditolak":
@@ -195,14 +232,7 @@ export default function IzinTable() {
                   <td className="px-6 py-4 text-sm text-gray-900">{intern.kampus}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{intern.divisi || "-"}</td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      intern.status === 'aktif' ? 'bg-green-100 text-green-800' : 
-                      intern.status === 'selesai' ? 'bg-blue-100 text-blue-800' :
-                      intern.status === 'dikeluarkan' ? 'bg-red-100 text-red-800' : 
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {intern.status.charAt(0).toUpperCase() + intern.status.slice(1)}
-                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${intern.status === "aktif" ? "bg-green-100 text-green-800" : intern.status === "selesai" ? "bg-blue-100 text-blue-800" : intern.status === "dikeluarkan" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}`}>{intern.status.charAt(0).toUpperCase() + intern.status.slice(1)}</span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     <button
@@ -210,8 +240,7 @@ export default function IzinTable() {
                         setSelectedIntern(intern);
                         fetchIzinForIntern(intern.userId);
                       }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                    >
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
                       Lihat Izin
                     </button>
                   </td>
@@ -230,13 +259,12 @@ export default function IzinTable() {
       <>
         {selectedIntern && (
           <div className="mb-6">
-            <button 
+            <button
               onClick={goBackToInternList}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mb-4 flex items-center"
-            >
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mb-4 flex items-center">
               <span className="mr-2">←</span> Kembali ke Daftar Anak Magang
             </button>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h2 className="text-xl font-bold mb-2">Data Izin: {selectedIntern.nama}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -285,12 +313,11 @@ export default function IzinTable() {
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageIzin || "-"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.linkBukti ? (
-                          <a 
-                            href={item.linkBukti} 
-                            target="_blank" 
+                          <a
+                            href={item.linkBukti}
+                            target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-500 hover:text-blue-700 underline"
-                          >
+                            className="text-blue-500 hover:text-blue-700 underline">
                             Lihat Bukti
                           </a>
                         ) : (
@@ -319,11 +346,7 @@ export default function IzinTable() {
 
   // Admin view
   if (role === "admin") {
-    return (
-      <div className="w-full">
-        {viewMode === "list" ? renderInternList() : renderIzinDetail()}
-      </div>
-    );
+    return <div className="w-full">{viewMode === "list" ? renderInternList() : renderIzinDetail()}</div>;
   }
 
   // Regular user view
@@ -354,7 +377,7 @@ export default function IzinTable() {
           </div>
         </div>
       )}
-      
+
       {nullLength ? (
         <div className="flex justify-center items-center min-h-[300px] w-full">
           <h1>Anda belum memiliki riwayat pengajuan izin</h1>
@@ -383,12 +406,11 @@ export default function IzinTable() {
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageIzin || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {item.linkBukti ? (
-                        <a 
-                          href={item.linkBukti} 
-                          target="_blank" 
+                        <a
+                          href={item.linkBukti}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:text-blue-700 underline"
-                        >
+                          className="text-blue-500 hover:text-blue-700 underline">
                           Lihat Bukti
                         </a>
                       ) : (
@@ -404,4 +426,4 @@ export default function IzinTable() {
       )}
     </div>
   );
-} 
+}
