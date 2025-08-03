@@ -41,9 +41,9 @@ export default function PengaturanAbsenPage() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log(user);
-        const token = user.getIdTokenResult;
+        const tokenResult = await user.getIdTokenResult();
         setUser(user);
-        setRole(token.claims.role);
+        setRole(tokenResult.claims.role);
         // Load existing geofencing settings
       }
     });
