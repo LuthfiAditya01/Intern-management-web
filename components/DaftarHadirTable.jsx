@@ -167,6 +167,25 @@ export default function DaftarHadirTable() {
     return "-";
   };
 
+  // Helper function untuk format waktu checkout
+  const formatCheckoutTime = (checkoutTime) => {
+    if (!checkoutTime) return "-";
+    const date = new Date(checkoutTime);
+    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  // Helper function untuk extract keterangan masuk dan pulang
+  const extractKeterangan = (keteranganMasuk) => {
+    if (!keteranganMasuk) return { masuk: "-", pulang: "-" };
+    
+    if (keteranganMasuk.includes(" | ")) {
+      const [masuk, pulang] = keteranganMasuk.split(" | ");
+      return { masuk: masuk || "-", pulang: pulang || "-" };
+    }
+    
+    return { masuk: keteranganMasuk, pulang: "-" };
+  };
+
   // Helper function untuk kalkulasi jarak
   const calculateDistance = (lat, long, type) => {
     if (!lat || !long || !latCenter || !longCenter) {
@@ -309,19 +328,20 @@ export default function DaftarHadirTable() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {data.absensi.map((item, index) => {
+                  const keterangan = extractKeterangan(item.keteranganMasuk);
                   return (
                     <tr
                       key={index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{formatDate(item.absenDate)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuDatang, item.absenDate)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(null, item.absenDate)}</td>
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latCordinate, item.longCordinate, "masuk")}</td>
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuPulang)}</td>
-                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latPulang, item.longPulang, "pulang")}</td>
-                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCheckoutTime(item.checkoutTime)}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.checkoutTime ? calculateDistance(item.checkoutLatCordinate, item.checkoutLongCordinate, "pulang") : "-"}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.checkoutMessageText || "-"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{keterangan.masuk}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{keterangan.pulang}</td>
                     </tr>
                   );
                 })}
@@ -402,19 +422,20 @@ export default function DaftarHadirTable() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {data.absensi.map((item, index) => {
+                const keterangan = extractKeterangan(item.keteranganMasuk);
                 return (
                   <tr
                     key={index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{formatDate(item.absenDate)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuDatang, item.absenDate)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(null, item.absenDate)}</td>
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latCordinate, item.longCordinate, "masuk")}</td>
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuPulang)}</td>
-                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latPulang, item.longPulang, "pulang")}</td>
-                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCheckoutTime(item.checkoutTime)}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.checkoutTime ? calculateDistance(item.checkoutLatCordinate, item.checkoutLongCordinate, "pulang") : "-"}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.checkoutMessageText || "-"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{keterangan.masuk}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{keterangan.pulang}</td>
                   </tr>
                 );
               })}

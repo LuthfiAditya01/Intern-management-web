@@ -138,83 +138,83 @@ const SertifikatPage = () => {
   // };
 
   // Fetch intern data from the database
-  useEffect(() => {
-    const fetchInterns = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/intern");
-        if (!response.ok) {
-          console.error(`API returned status: ${response.status}`);
-          throw new Error("Failed to fetch interns");
-        }
-
-        const data = await response.json();
-        console.log("API response:", data); // Debug log
-
-        // Handle the case where interns might be undefined
-        if (!data || !data.interns) {
-          console.error("API response is missing interns data:", data);
-          // Use empty array as fallback
-          setData([]);
-          setLoading(false);
-          setApiError(true);
-          return;
-        }
-
-        if (!Array.isArray(data.interns)) {
-          console.error("Invalid data format, interns is not an array:", data.interns);
-          throw new Error("Invalid data format received from API");
-        }
-
-        // Format the data to match your expected structure
-        const formattedData = data.interns.map((intern, index) => {
-          console.log(`Intern ${index} _id:`, intern._id, "type:", typeof intern._id);
-
-          // Check if _id looks like a MongoDB ObjectID (24 hex chars)
-          const isValidMongoId = intern._id && (typeof intern._id === "string" || intern._id instanceof String) && /^[0-9a-fA-F]{24}$/.test(intern._id);
-
-          console.log(`Intern ${index} has valid MongoDB ID:`, isValidMongoId);
-
-          // Use the _id if valid, otherwise use a temporary ID
-          const validId = isValidMongoId ? intern._id : `intern-${index}`;
-
-          return {
-            id: validId,
-            nim: intern.nim || "",
-            nama: intern.nama || "",
-            prodi: intern.prodi || "",
-            sekolah: intern.kampus || "",
-            tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split("T")[0] : "",
-            tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split("T")[0] : "",
-            lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
-            nomorSertifikat: intern.nomorSertifikat || "",
-            isSertifikatVerified: intern.isSertifikatVerified || false,
-            userId: intern.userId || null,
-            // Add this flag to indicate if the ID is a real MongoDB ID
-            hasValidId: isValidMongoId,
-          };
-        });
-
-        setData(formattedData);
-
-        // Set up disabled buttons for already verified interns
-        const disabledMap = {};
-        formattedData.forEach((intern) => {
-          if (intern.isSertifikatVerified) {
-            disabledMap[intern.id] = true;
-          }
-        });
-        setDisabledButtons(disabledMap);
-      } catch (error) {
-        console.error("Error fetching intern data:", error);
-        // Set empty data array to prevent mapping errors
-        setData([]);
-        setApiError(true);
-      } finally {
-        setLoading(false);
+  const fetchInterns = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/intern");
+      if (!response.ok) {
+        console.error(`API returned status: ${response.status}`);
+        throw new Error("Failed to fetch interns");
       }
-    };
 
+      const data = await response.json();
+      console.log("API response:", data); // Debug log
+
+      // Handle the case where interns might be undefined
+      if (!data || !data.interns) {
+        console.error("API response is missing interns data:", data);
+        // Use empty array as fallback
+        setData([]);
+        setLoading(false);
+        setApiError(true);
+        return;
+      }
+
+      if (!Array.isArray(data.interns)) {
+        console.error("Invalid data format, interns is not an array:", data.interns);
+        throw new Error("Invalid data format received from API");
+      }
+
+      // Format the data to match your expected structure
+      const formattedData = data.interns.map((intern, index) => {
+        console.log(`Intern ${index} _id:`, intern._id, "type:", typeof intern._id);
+
+        // Check if _id looks like a MongoDB ObjectID (24 hex chars)
+        const isValidMongoId = intern._id && (typeof intern._id === "string" || intern._id instanceof String) && /^[0-9a-fA-F]{24}$/.test(intern._id);
+
+        console.log(`Intern ${index} has valid MongoDB ID:`, isValidMongoId);
+
+        // Use the _id if valid, otherwise use a temporary ID
+        const validId = isValidMongoId ? intern._id : `intern-${index}`;
+
+        return {
+          id: validId,
+          nim: intern.nim || "",
+          nama: intern.nama || "",
+          prodi: intern.prodi || "",
+          sekolah: intern.kampus || "",
+          tanggalMulai: intern.tanggalMulai ? new Date(intern.tanggalMulai).toISOString().split("T")[0] : "",
+          tanggalSelesai: intern.tanggalSelesai ? new Date(intern.tanggalSelesai).toISOString().split("T")[0] : "",
+          lamaMagang: calculateDuration(intern.tanggalMulai, intern.tanggalSelesai),
+          nomorSertifikat: intern.nomorSertifikat || "",
+          isSertifikatVerified: intern.isSertifikatVerified || false,
+          userId: intern.userId || null,
+          // Add this flag to indicate if the ID is a real MongoDB ID
+          hasValidId: isValidMongoId,
+        };
+      });
+
+      setData(formattedData);
+
+      // Set up disabled buttons for already verified interns
+      const disabledMap = {};
+      formattedData.forEach((intern) => {
+        if (intern.isSertifikatVerified) {
+          disabledMap[intern.id] = true;
+        }
+      });
+      setDisabledButtons(disabledMap);
+    } catch (error) {
+      console.error("Error fetching intern data:", error);
+      // Set empty data array to prevent mapping errors
+      setData([]);
+      setApiError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchInterns();
 
     // Also fetch templates
@@ -265,6 +265,8 @@ const SertifikatPage = () => {
 
   useEffect(() => {
     if (editData) {
+      console.log('🔍 useEffect editData triggered with:', editData);
+      console.log('🔍 editData.nomorSertifikat:', editData.nomorSertifikat);
       setEditTanggalMulai(editData.tanggalMulai || "");
       setEditTanggalSelesai(editData.tanggalSelesai || "");
       setEditNomorSertifikat(editData.nomorSertifikat || "");
@@ -283,6 +285,8 @@ const SertifikatPage = () => {
   const [deleteId, setDeleteId] = useState(null);
 
   const handleEditClick = (item) => {
+    console.log('🔍 handleEditClick called with item:', item);
+    console.log('🔍 item.nomorSertifikat:', item.nomorSertifikat);
     setEditData(item);
     setShowEditModal(true);
   };
@@ -586,6 +590,8 @@ const SertifikatPage = () => {
   // Fungsi untuk mengupdate nomor sertifikat
   const handleUpdateNomorSertifikat = async (itemId, nomorSertifikat) => {
     try {
+      console.log("🚀 handleUpdateNomorSertifikat called with:", { itemId, nomorSertifikat });
+      
       if (!nomorSertifikat || nomorSertifikat.trim() === "") {
         alert("Nomor sertifikat tidak boleh kosong");
         return false;
@@ -616,8 +622,8 @@ const SertifikatPage = () => {
       console.log("Response data:", result);
 
       if (response.ok) {
-        // Update local state
-        setData((prevData) => prevData.map((item) => (item.id === itemId ? { ...item, nomorSertifikat: nomorSertifikat.trim() } : item)));
+        // Refresh data from database to ensure consistency
+        await fetchInterns();
         return true;
       } else {
         throw new Error(result.message || "Gagal mengupdate nomor sertifikat");
@@ -625,6 +631,48 @@ const SertifikatPage = () => {
     } catch (error) {
       console.error("Error updating nomor sertifikat:", error);
       alert(`Gagal mengupdate nomor sertifikat: ${error.message}`);
+      return false;
+    }
+  };
+
+  // Fungsi untuk mengupdate semua data intern
+  const handleUpdateInternData = async (itemId, updatedData) => {
+    try {
+      console.log("Sending update request for intern ID:", itemId, "with data:", updatedData);
+
+      const response = await fetch(`/api/intern/${itemId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newNama: updatedData.nama,
+          newNim: updatedData.nim,
+          newProdi: updatedData.prodi,
+          newKampus: updatedData.sekolah, // Map sekolah to kampus
+          newTanggalMulai: updatedData.tanggalMulai,
+          newTanggalSelesai: updatedData.tanggalSelesai,
+          newNomorSertifikat: updatedData.nomorSertifikat,
+        }),
+      });
+
+      console.log("Response status:", response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Update response:", result);
+        
+        // Refresh data from database to ensure consistency
+        await fetchInterns();
+        
+        return true;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Gagal mengupdate data intern");
+      }
+    } catch (error) {
+      console.error("Error updating intern data:", error);
+      alert(`Gagal mengupdate data intern: ${error.message}`);
       return false;
     }
   };
@@ -844,6 +892,21 @@ const SertifikatPage = () => {
                                 title={!item.hasValidId ? "ID peserta tidak valid untuk verifikasi" : ""}>
                                 {item.isSertifikatVerified ? "Terverifikasi" : item.hasValidId ? "Verifikasi" : "ID Tidak Valid"}
                               </button>
+
+                              {/* Add Update Nomor Sertifikat Button */}
+                              {item.hasValidId && (
+                                <button
+                                  className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs cursor-pointer"
+                                  onClick={() => {
+                                    const newNomor = prompt(`Masukkan nomor sertifikat untuk ${item.nama}:`, item.nomorSertifikat || "");
+                                    if (newNomor !== null) {
+                                      handleUpdateNomorSertifikat(item.id, newNomor);
+                                    }
+                                  }}
+                                  title="Update nomor sertifikat">
+                                  UPDATE NOMOR
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1128,7 +1191,14 @@ const SertifikatPage = () => {
                       e.preventDefault();
                       const form = e.target;
 
-                      // First update local state
+                      // Generate new nomor sertifikat if user entered nomor urut
+                      let finalNomorSertifikat = editNomorSertifikat;
+                      if (editNomorUrut && editNomorUrut.trim() !== "") {
+                        finalNomorSertifikat = generateNomorSertifikat(editNomorUrut);
+                        console.log('Generated new nomor sertifikat:', finalNomorSertifikat);
+                      }
+
+                      // Prepare updated data
                       const updated = {
                         ...editData,
                         nim: form.nim.value,
@@ -1138,30 +1208,36 @@ const SertifikatPage = () => {
                         tanggalMulai: editTanggalMulai,
                         tanggalSelesai: editTanggalSelesai,
                         lamaMagang: editLamaMagang,
-                        nomorSertifikat: editNomorSertifikat,
+                        nomorSertifikat: finalNomorSertifikat,
                       };
 
-                      // Update nomor sertifikat via API if intern has valid ID
-                      if (editData.hasValidId && editNomorSertifikat !== editData.nomorSertifikat) {
-                        const success = await handleUpdateNomorSertifikat(editData.id, editNomorSertifikat);
+                      console.log('🔍 DEBUG: editData.hasValidId:', editData.hasValidId);
+                      console.log('🔍 DEBUG: finalNomorSertifikat:', finalNomorSertifikat);
+                      console.log('🔍 DEBUG: editNomorUrut:', editNomorUrut);
+
+                      // Update all intern data via API if intern has valid ID
+                      if (editData.hasValidId) {
+                        const success = await handleUpdateInternData(editData.id, updated);
                         if (!success) {
                           return; // Don't close modal if API call failed
                         }
+                      } else {
+                        // For data without valid ID, just update local state
+                        setData(data.map((d) => (d.id === updated.id ? updated : d)));
                       }
 
-                      setData(data.map((d) => (d.id === updated.id ? updated : d)));
                       setShowEditModal(false);
                     }}>
                     <div className="grid grid-cols-1 gap-4 mb-6">
                       <div className="space-y-1">
                         <label
-                          htmlFor="nim"
+                          htmlFor="editNim"
                           className="block text-sm font-medium text-gray-700">
                           NIS/NPM
                         </label>
                         <input
                           defaultValue={editData.nim}
-                          id="nim"
+                          id="editNim"
                           name="nim"
                           type="text"
                           placeholder="Masukkan NIS/NPM"
@@ -1172,13 +1248,13 @@ const SertifikatPage = () => {
 
                       <div className="space-y-1">
                         <label
-                          htmlFor="nama"
+                          htmlFor="editNama"
                           className="block text-sm font-medium text-gray-700">
                           Nama
                         </label>
                         <input
                           defaultValue={editData.nama}
-                          id="nama"
+                          id="editNama"
                           name="nama"
                           type="text"
                           placeholder="Masukkan nama lengkap"
@@ -1189,13 +1265,13 @@ const SertifikatPage = () => {
 
                       <div className="space-y-1">
                         <label
-                          htmlFor="prodi"
+                          htmlFor="editProdi"
                           className="block text-sm font-medium text-gray-700">
                           Prodi
                         </label>
                         <select
                           defaultValue={editData.prodi}
-                          id="prodi"
+                          id="editProdi"
                           name="prodi"
                           type="text"
                           className="w-full border border-gray-300 p-3 rounded-md text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1212,15 +1288,16 @@ const SertifikatPage = () => {
 
                       <div className="space-y-1">
                         <label
-                          htmlFor="sekolah"
+                          htmlFor="editSekolah"
                           className="block text-sm font-medium text-gray-700">
-                          Sekolah
+                          Sekolah/Perguruan Tinggi
                         </label>
                         <input
                           defaultValue={editData.sekolah}
-                          id="sekolah"
+                          id="editSekolah"
                           name="sekolah"
                           type="text"
+                          placeholder="Masukkan nama sekolah/perguruan tinggi"
                           className="w-full border border-gray-300 p-3 rounded-md text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -1228,12 +1305,12 @@ const SertifikatPage = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label
-                            htmlFor="tanggalMulai"
+                            htmlFor="editTanggalMulai"
                             className="block text-sm font-medium text-gray-700">
                             Tanggal Mulai
                           </label>
                           <input
-                            id="tanggalMulai"
+                            id="editTanggalMulai"
                             name="tanggalMulai"
                             type="date"
                             value={editTanggalMulai}
@@ -1246,12 +1323,12 @@ const SertifikatPage = () => {
                         </div>
                         <div className="space-y-1">
                           <label
-                            htmlFor="tanggalSelesai"
+                            htmlFor="editTanggalSelesai"
                             className="block text-sm font-medium text-gray-700">
                             Tanggal Selesai
                           </label>
                           <input
-                            id="tanggalSelesai"
+                            id="editTanggalSelesai"
                             name="tanggalSelesai"
                             type="date"
                             value={editTanggalSelesai}
@@ -1266,12 +1343,12 @@ const SertifikatPage = () => {
 
                       <div className="mt-4 space-y-1">
                         <label
-                          htmlFor="lamaMagang"
+                          htmlFor="editLamaMagang"
                           className="block text-sm font-medium text-gray-700">
                           Lama Magang
                         </label>
                         <input
-                          id="lamaMagang"
+                          id="editLamaMagang"
                           name="lamaMagang"
                           type="text"
                           value={editLamaMagang}

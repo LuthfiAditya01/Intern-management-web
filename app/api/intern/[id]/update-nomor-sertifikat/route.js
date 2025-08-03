@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { connectMongoDB } from '@/lib/mongodb';
+import connectMongoDB from '@/lib/mongodb';
 import Intern from '@/models/internInfo';
 
 export async function PUT(request, { params }) {
   try {
     const { id } = params;
+    console.log('🚀 PUT /api/intern/[id]/update-nomor-sertifikat called');
     console.log('Updating nomor sertifikat for intern ID:', id);
     
     const { nomorSertifikat } = await request.json();
@@ -21,6 +22,13 @@ export async function PUT(request, { params }) {
     // Connect to MongoDB
     await connectMongoDB();
 
+    // First, find the intern to verify it exists
+    const existingIntern = await Intern.findById(id);
+    console.log('Existing intern found:', existingIntern ? 'Yes' : 'No');
+    if (existingIntern) {
+      console.log('Current nomorSertifikat:', existingIntern.nomorSertifikat);
+    }
+
     // Find and update the intern
     const updatedIntern = await Intern.findByIdAndUpdate(
       id,
@@ -31,12 +39,16 @@ export async function PUT(request, { params }) {
       { new: true }
     );
 
+    console.log('Updated intern result:', updatedIntern);
+
     if (!updatedIntern) {
       return NextResponse.json(
         { success: false, message: 'Data peserta magang tidak ditemukan' },
         { status: 404 }
       );
     }
+
+    console.log('Final nomorSertifikat in database:', updatedIntern.nomorSertifikat);
 
     return NextResponse.json({
       success: true,

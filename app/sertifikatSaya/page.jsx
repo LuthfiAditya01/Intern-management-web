@@ -119,8 +119,8 @@ export default function SertifikatSaya() {
         // Tunggu hingga auth state siap
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
           if (user) {
-            // Dapatkan data intern berdasarkan user.uid dengan cache busting
-            const res = await fetch("/api/intern?" + new Date().getTime());
+            // Dapatkan data intern berdasarkan user.uid dengan query parameter yang benar
+            const res = await fetch(`/api/intern?userId=${user.uid}&${new Date().getTime()}`);
             const data = await res.json();
 
             console.log("Fetched intern data for user:", data); // Debug log
@@ -131,12 +131,11 @@ export default function SertifikatSaya() {
               nomorSertifikat: intern.nomorSertifikat 
             }))); // Debug log
 
-            // Cari data intern yang cocok dengan user saat ini
-            const myInternData = data.interns.find(
-              (intern) => intern.userId === user.uid
-            );
+            // Ambil data intern pertama (karena query userId hanya mengembalikan 1 data)
+            const myInternData = data.interns[0];
 
             console.log("My intern data:", myInternData); // Debug log
+            console.log("Nomor sertifikat from API:", myInternData?.nomorSertifikat); // Debug log
 
             if (myInternData && myInternData.isSertifikatVerified) {
               setUserInternData(myInternData);
@@ -167,15 +166,13 @@ export default function SertifikatSaya() {
     try {
       const user = auth.currentUser;
       if (user) {
-        // Fetch data terbaru dengan cache busting
-        const res = await fetch("/api/intern?" + new Date().getTime());
+        // Fetch data terbaru dengan query parameter yang benar
+        const res = await fetch(`/api/intern?userId=${user.uid}&${new Date().getTime()}`);
         const data = await res.json();
 
         console.log("Refreshed intern data:", data); // Debug log
 
-        const myInternData = data.interns.find(
-          (intern) => intern.userId === user.uid
-        );
+        const myInternData = data.interns[0];
 
         console.log("My refreshed intern data:", myInternData); // Debug log
 
@@ -257,6 +254,7 @@ export default function SertifikatSaya() {
             ) {
               const nomorValue = internData.nomorSertifikat || "No. [BELUM DIISI]";
               console.log(`🎯 FOUND NOMOR FIELD! ID: ${el.id}, Label: "${el.label}" -> Setting value to:`, nomorValue); // Debug log
+              console.log(`📋 internData.nomorSertifikat:`, internData.nomorSertifikat); // Debug log
               return { ...el, value: nomorValue };
             } else if (el.id === 5 && el.label === "Deskripsi") {
               return {

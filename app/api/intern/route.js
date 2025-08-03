@@ -15,6 +15,7 @@ export async function GET(request) {
         // Jika ada userId, cari berdasarkan userId
         if (userId) {
             const intern = await Intern.findOne({ userId }).populate('pembimbing', 'nama');
+            console.log('Found intern for userId:', userId, 'Data:', intern);
             return NextResponse.json({ interns: intern ? [intern] : [] });
         }
 

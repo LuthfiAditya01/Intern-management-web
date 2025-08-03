@@ -29,21 +29,35 @@ export async function POST(request) {
       console.log(`Menggunakan waktu lokal: ${jam}:${menit}`);
     }
 
-    // Validasi waktu dan set keterangan absen
-    if ((jam >= 5 && jam < 7) || (jam === 7 && menit <= 30)) {
-      KeteranganAbsen = "Datang Tepat Waktu";
-    } else if ((jam === 7 && menit > 30) || (jam > 7 && jam < 12)) {
-      KeteranganAbsen = "Datang Terlambat";
-    } else if (jam >= 12 && jam < 16) {
-      KeteranganAbsen = "Pulang Cepat";
-    } else if(jam === 16) {
-      KeteranganAbsen = "Pulang Tepat Waktu"
-    } else if (jam > 16 && jam < 23) {
-      KeteranganAbsen = "Pulang Lembur";
+    // Validasi waktu dan set keterangan absen berdasarkan jam
+    let jenisAbsen = "";
+    
+    if (jam < 12) {
+      // Absen Datang (sebelum jam 12)
+      jenisAbsen = "datang";
+      if ((jam >= 5 && jam < 7) || (jam === 7 && menit <= 30)) {
+        KeteranganAbsen = "Datang Tepat Waktu";
+      } else if ((jam === 7 && menit > 30) || (jam > 7 && jam < 12)) {
+        KeteranganAbsen = "Datang Terlambat";
+      } else {
+        return NextResponse.json({ 
+          error: "Anda mengisi absen datang di luar jam yang ditentukan (05:00-11:59)" 
+        }, { status: 400 });
+      }
     } else {
-      return NextResponse.json({ 
-        error: "Anda mengisi daftar hadir di luar jam yang ditentukan (05:00-07:30 atau 16:00-23:00)" 
-      }, { status: 400 });
+      // Absen Pulang (jam 12 ke atas)
+      jenisAbsen = "pulang";
+      if (jam >= 12 && jam < 16) {
+        KeteranganAbsen = "Pulang Cepat";
+      } else if (jam === 16) {
+        KeteranganAbsen = "Pulang Tepat Waktu";
+      } else if (jam > 16 && jam < 23) {
+        KeteranganAbsen = "Pulang Lembur";
+      } else {
+        return NextResponse.json({ 
+          error: "Anda mengisi absen pulang di luar jam yang ditentukan (12:00-22:59)" 
+        }, { status: 400 });
+      }
     }
 
     // Connect ke MongoDB
@@ -54,22 +68,70 @@ export async function POST(request) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
     }
 
-    // Buat objek absensi baru
-    const absensi = new DaftarHadir({
+    // Cek apakah sudah ada absen hari ini
+    const today = new Date(waktuData);
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingAbsen = await DaftarHadir.findOne({
       idUser: userId,
-      absenDate: waktuData,
-      longCordinate: parseFloat(longCordinate),
-      latCordinate: parseFloat(latCordinate),
-      messageText: dailyNote,
-      keteranganMasuk: KeteranganAbsen
+      absenDate: {
+        $gte: today,
+        $lt: tomorrow
+      }
     });
 
-    // Simpan ke database
-    await absensi.save();
+    let absensi;
+
+    if (jenisAbsen === "datang") {
+      if (existingAbsen) {
+        return NextResponse.json({ 
+          error: "Anda sudah melakukan absen datang hari ini" 
+        }, { status: 400 });
+      }
+
+      // Buat absen datang baru
+      absensi = new DaftarHadir({
+        idUser: userId,
+        absenDate: waktuData,
+        longCordinate: parseFloat(longCordinate),
+        latCordinate: parseFloat(latCordinate),
+        messageText: dailyNote,
+        keteranganMasuk: KeteranganAbsen,
+        jenisAbsen: "datang"
+      });
+
+      await absensi.save();
+    } else {
+      // jenisAbsen === "pulang"
+      if (!existingAbsen) {
+        return NextResponse.json({ 
+          error: "Anda belum melakukan absen datang hari ini" 
+        }, { status: 400 });
+      }
+
+      if (existingAbsen.checkoutTime) {
+        return NextResponse.json({ 
+          error: "Anda sudah melakukan absen pulang hari ini" 
+        }, { status: 400 });
+      }
+
+      // Update absen yang sudah ada dengan waktu pulang
+      existingAbsen.checkoutTime = waktuData;
+      existingAbsen.checkoutLongCordinate = parseFloat(longCordinate);
+      existingAbsen.checkoutLatCordinate = parseFloat(latCordinate);
+      existingAbsen.checkoutMessageText = dailyNote;
+      existingAbsen.keteranganMasuk = `${existingAbsen.keteranganMasuk} | ${KeteranganAbsen}`;
+      
+      await existingAbsen.save();
+      absensi = existingAbsen;
+    }
 
     return NextResponse.json({
-      message: "Absensi berhasil disimpan",
+      message: jenisAbsen === "datang" ? "Absen datang berhasil disimpan" : "Absen pulang berhasil disimpan",
       absensi,
+      jenisAbsen,
       redirectUrl: "/historiDaftarHadir",
     }, { status: 201 });
 
