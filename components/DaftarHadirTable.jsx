@@ -147,6 +147,48 @@ export default function DaftarHadirTable() {
     setSelectedIntern(null);
   };
 
+  // Helper function untuk format tanggal
+  const formatDate = (dateString) => {
+    const absenDate = new Date(dateString);
+    const date = absenDate.getDate();
+    const month = absenDate.getMonth();
+    const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const year = absenDate.getFullYear();
+    return `${date} ${monthStr[month]} ${year}`;
+  };
+
+  // Helper function untuk format waktu
+  const formatTime = (timeString, fallbackDate) => {
+    if (timeString) return timeString;
+    if (fallbackDate) {
+      const date = new Date(fallbackDate);
+      return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    }
+    return "-";
+  };
+
+  // Helper function untuk kalkulasi jarak
+  const calculateDistance = (lat, long, type) => {
+    if (!lat || !long || !latCenter || !longCenter) {
+      return "Tidak tersedia";
+    }
+
+    try {
+      const userLoc = {
+        latitude: parseFloat(lat),
+        longitude: parseFloat(long),
+      };
+      const centerLoc = {
+        latitude: parseFloat(latCenter),
+        longitude: parseFloat(longCenter),
+      };
+      return `${getPreciseDistance(userLoc, centerLoc)} meter`;
+    } catch (error) {
+      console.error(`Error calculating ${type} distance:`, error);
+      return "Error kalkulasi";
+    }
+  };
+
   // Render admin intern list view
   const renderInternList = () => {
     if (internList.length === 0) {
@@ -212,7 +254,7 @@ export default function DaftarHadirTable() {
     );
   };
 
-  // Modify renderAttendanceTable function
+  // Unified attendance table renderer
   const renderAttendanceTable = () => {
     return (
       <>
@@ -267,66 +309,16 @@ export default function DaftarHadirTable() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {data.absensi.map((item, index) => {
-                  const absenDate = new Date(item.absenDate);
-                  const date = absenDate.getDate();
-                  const month = absenDate.getMonth();
-                  const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                  const year = absenDate.getFullYear();
-                  
-                  // Format waktu absen masuk
-                  const jamMasuk = item.waktuDatang ? item.waktuDatang : `${absenDate.getHours().toString().padStart(2, "0")}:${absenDate.getMinutes().toString().padStart(2, "0")}`;
-                  
-                  // Format waktu absen pulang
-                  const jamPulang = item.waktuPulang || "-";
-                  
-                  // Format jarak saat masuk
-                  let jarakMasuk = "Tidak tersedia";
-                  if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
-                    const userLoc = {
-                      latitude: parseFloat(item.latCordinate),
-                      longitude: parseFloat(item.longCordinate),
-                    };
-                    const centerLoc = {
-                      latitude: parseFloat(latCenter),
-                      longitude: parseFloat(longCenter),
-                    };
-                    try {
-                      jarakMasuk = `${getPreciseDistance(userLoc, centerLoc)} meter`;
-                    } catch (error) {
-                      console.error("Error calculating distance:", error);
-                      jarakMasuk = "Error kalkulasi";
-                    }
-                  }
-                  
-                  // Format jarak saat pulang
-                  let jarakPulang = "Tidak tersedia";
-                  if (item.latPulang && item.longPulang && latCenter && longCenter) {
-                    const userLoc = {
-                      latitude: parseFloat(item.latPulang),
-                      longitude: parseFloat(item.longPulang),
-                    };
-                    const centerLoc = {
-                      latitude: parseFloat(latCenter),
-                      longitude: parseFloat(longCenter),
-                    };
-                    try {
-                      jarakPulang = `${getPreciseDistance(userLoc, centerLoc)} meter`;
-                    } catch (error) {
-                      console.error("Error calculating distance:", error);
-                      jarakPulang = "Error kalkulasi";
-                    }
-                  }
-                  
                   return (
                     <tr
                       key={index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamMasuk}</td>
-                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakMasuk}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{formatDate(item.absenDate)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuDatang, item.absenDate)}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latCordinate, item.longCordinate, "masuk")}</td>
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamPulang}</td>
-                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakPulang}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuPulang)}</td>
+                      <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latPulang, item.longPulang, "pulang")}</td>
                       <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>
@@ -410,66 +402,16 @@ export default function DaftarHadirTable() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {data.absensi.map((item, index) => {
-                const absenDate = new Date(item.absenDate);
-                const date = absenDate.getDate();
-                const month = absenDate.getMonth();
-                const monthStr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                const year = absenDate.getFullYear();
-                
-                // Format waktu absen masuk
-                const jamMasuk = item.waktuDatang ? item.waktuDatang : `${absenDate.getHours().toString().padStart(2, "0")}:${absenDate.getMinutes().toString().padStart(2, "0")}`;
-                
-                // Format waktu absen pulang
-                const jamPulang = item.waktuPulang || "-";
-                
-                // Format jarak saat masuk
-                let jarakMasuk = "Tidak tersedia";
-                if (item.latCordinate && item.longCordinate && latCenter && longCenter) {
-                  const userLoc = {
-                    latitude: parseFloat(item.latCordinate),
-                    longitude: parseFloat(item.longCordinate),
-                  };
-                  const centerLoc = {
-                    latitude: parseFloat(latCenter),
-                    longitude: parseFloat(longCenter),
-                  };
-                  try {
-                    jarakMasuk = `${getPreciseDistance(userLoc, centerLoc)} meter`;
-                  } catch (error) {
-                    console.error("Error calculating distance:", error);
-                    jarakMasuk = "Error kalkulasi";
-                  }
-                }
-                
-                // Format jarak saat pulang
-                let jarakPulang = "Tidak tersedia";
-                if (item.latPulang && item.longPulang && latCenter && longCenter) {
-                  const userLoc = {
-                    latitude: parseFloat(item.latPulang),
-                    longitude: parseFloat(item.longPulang),
-                  };
-                  const centerLoc = {
-                    latitude: parseFloat(latCenter),
-                    longitude: parseFloat(longCenter),
-                  };
-                  try {
-                    jarakPulang = `${getPreciseDistance(userLoc, centerLoc)} meter`;
-                  } catch (error) {
-                    console.error("Error calculating distance:", error);
-                    jarakPulang = "Error kalkulasi";
-                  }
-                }
-                
                 return (
                   <tr
                     key={index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{`${date} ${monthStr[month]} ${year}`}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamMasuk}</td>
-                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakMasuk}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{formatDate(item.absenDate)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuDatang, item.absenDate)}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latCordinate, item.longCordinate, "masuk")}</td>
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messageText || "-"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{jamPulang}</td>
-                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{jarakPulang}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTime(item.waktuPulang)}</td>
+                    <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{calculateDistance(item.latPulang, item.longPulang, "pulang")}</td>
                     <td className="px-6 py-4 whitespace-break-spaces text-sm text-gray-900">{item.messagePulang || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganMasuk || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.keteranganPulang || "-"}</td>

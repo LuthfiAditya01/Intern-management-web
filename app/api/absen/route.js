@@ -10,22 +10,22 @@ export async function POST(request) {
     // Ambil data dari request
     const { userId, nama, longCordinate, latCordinate, dailyNote } = await request.json();
     let KeteranganAbsen = "";
-    let jam, menit;
+    let jam, menit, waktuResponse, waktuData, waktu;
 
     try {
-      const waktuResponse = await fetch("http://worldtimeapi.org/api/timezone/Asia/Jakarta");
+      waktuResponse = await fetch("http://worldtimeapi.org/api/timezone/Asia/Jakarta");
       console.log("Fetch waktu dari API WorldTimeAPI berhasil");
-      const waktuData = await waktuResponse.json();
-      const waktu = new Date(waktuData.datetime);
+      waktuData = await waktuResponse.json();
+      waktu = new Date(waktuData.datetime);
       console.log("Waktu berdasarkan WorldTime API Zona Jakarta adalah : ", waktu);
       jam = waktu.getHours();
       menit = waktu.getMinutes();
       console.log(`Waktu saat ini: ${jam}:${menit}`);
     } catch (error) {
       console.log("Gagal mengambil waktu dari API, menggunakan waktu server lokal");
-      const waktuLokal = new Date();
-      jam = waktuLokal.getHours();
-      menit = waktuLokal.getMinutes();
+      waktuData = new Date();
+      jam = waktuData.getHours();
+      menit = waktuData.getMinutes();
       console.log(`Menggunakan waktu lokal: ${jam}:${menit}`);
     }
 
@@ -57,7 +57,7 @@ export async function POST(request) {
     // Buat objek absensi baru
     const absensi = new DaftarHadir({
       idUser: userId,
-      absenDate: new Date(),
+      absenDate: waktuData,
       longCordinate: parseFloat(longCordinate),
       latCordinate: parseFloat(latCordinate),
       messageText: dailyNote,

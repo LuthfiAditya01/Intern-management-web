@@ -740,7 +740,7 @@ export default function Dashboard() {
               <div className="fixed bottom-5 right-5 hover:bottom-7 transition-all ease-out duration-200 z-50">
                 <button
                   onClick={() => handleMenuClick("/absen")}
-                  className="bg-blue-500 focus:bg-blue-700 focus:translate-y-8 rounded-2xl hover:bg-blue-700 hover:px-6 hover:py-4 hover:rounded-xl text-white px-4 py-3 hover:shadow-lg font-medium transition-all ease-out cursor-pointer duration-300">
+                  className="bg-blue-500 focus:bg-blue-700 focus:translate-y-4 rounded-2xl hover:bg-blue-700 hover:px-6 hover:py-4 hover:rounded-xl text-white px-4 py-3 hover:shadow-lg font-medium transition-all ease-out cursor-pointer duration-300">
                   ✅ Isi Daftar Hadir
                 </button>
               </div>
