@@ -16,64 +16,30 @@ export default function SertifikatSaya() {
   const [downloading, setDownloading] = useState(false);
   const [userInternData, setUserInternData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const sertifikatRef = useRef(null);
 
-  // Fungsi untuk mendownload sertifikat sebagai gambar JPG
-  // const handleDownloadImage = async () => {
-  //   if (!sertifikatRef.current) {
-  //     alert('Tidak dapat mengunduh sertifikat. Silakan coba lagi.');
-  //     return;
-  //   }
+  // Check if device is mobile
+  useEffect(() => {
+    const checkDevice = () => {
+      const isMobileDevice = window.innerWidth < 768; // 768px adalah breakpoint untuk tablet/desktop
+      setIsMobile(isMobileDevice);
+      
+      if (isMobileDevice) {
+        // Redirect ke halaman mobile atau tampilkan pesan
+        window.location.href = '/mobile-not-supported';
+        return;
+      }
+    };
 
-  //   try {
-  //     setDownloading(true);
+    // Check on mount
+    checkDevice();
 
-  //     // Tunggu semua gambar termuat dengan sempurna
-  //     const images = sertifikatRef.current.querySelectorAll('img');
-  //     const imagePromises = Array.from(images).map(img => {
-  //       return new Promise((resolve) => {
-  //         if (img.complete && img.naturalWidth !== 0) {
-  //           resolve();
-  //         } else {
-  //           img.onload = resolve;
-  //           img.onerror = resolve; // Tetap resolve meskipun ada error
-  //         }
-  //       });
-  //     });
-
-  //     await Promise.all(imagePromises);
-
-  //     // Tunggu sebentar untuk memastikan render selesai
-  //     await new Promise(resolve => setTimeout(resolve, 1000));
-
-  //     // Buat canvas dari elemen sertifikat
-  //     const canvas = await html2canvas(sertifikatRef.current, {
-  //       scale: 3, // Tingkatkan kualitas (resolusi 3x untuk hasil lebih crisp)
-  //       useCORS: true, // Izinkan gambar cross-origin
-  //       allowTaint: true,
-  //       backgroundColor: '#ffffff', // Set background putih agar tidak transparan
-  //       logging: false,
-  //       foreignObjectRendering: true, // Untuk render yang lebih baik
-  //       imageTimeout: 15000, // Timeout untuk loading gambar
-  //       removeContainer: true,
-  //     });
-
-  //     // Konversi canvas ke blob/URL data dengan kualitas maksimal
-  //     const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-
-  //     // Buat elemen <a> untuk download
-  //     const link = document.createElement('a');
-  //     link.download = `Sertifikat_${userInternData?.nama || 'Peserta'}_BPS.jpg`;
-  //     link.href = dataUrl;
-  //     link.click();
-
-  //   } catch (error) {
-  //     console.error("Error saat mengunduh sertifikat:", error);
-  //     alert('Gagal mengunduh sertifikat. Silakan coba lagi.');
-  //   } finally {
-  //     setDownloading(false);
-  //   }
-  // };
+    // Check on resize
+    window.addEventListener('resize', checkDevice);
+    
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   // Konfigurasi untuk mencetak hanya bagian sertifikat (sebagai alternatif)
   const handlePrint = useReactToPrint({
@@ -123,19 +89,8 @@ export default function SertifikatSaya() {
             const res = await fetch(`/api/intern?userId=${user.uid}&${new Date().getTime()}`);
             const data = await res.json();
 
-            console.log("Fetched intern data for user:", data); // Debug log
-            console.log("Current user UID:", user.uid); // Debug log
-            console.log("Available interns:", data.interns.map(intern => ({ 
-              nama: intern.nama, 
-              userId: intern.userId, 
-              nomorSertifikat: intern.nomorSertifikat 
-            }))); // Debug log
-
             // Ambil data intern pertama (karena query userId hanya mengembalikan 1 data)
             const myInternData = data.interns[0];
-
-            console.log("My intern data:", myInternData); // Debug log
-            console.log("Nomor sertifikat from API:", myInternData?.nomorSertifikat); // Debug log
 
             if (myInternData && myInternData.isSertifikatVerified) {
               setUserInternData(myInternData);
@@ -170,11 +125,7 @@ export default function SertifikatSaya() {
         const res = await fetch(`/api/intern?userId=${user.uid}&${new Date().getTime()}`);
         const data = await res.json();
 
-        console.log("Refreshed intern data:", data); // Debug log
-
         const myInternData = data.interns[0];
-
-        console.log("My refreshed intern data:", myInternData); // Debug log
 
         if (myInternData && myInternData.isSertifikatVerified) {
           setUserInternData(myInternData);
@@ -191,8 +142,6 @@ export default function SertifikatSaya() {
   // Fungsi untuk generate sertifikat dari template
   const generateCertificate = async (internData) => {
     try {
-      console.log("Generating certificate with intern data:", internData); // Debug log
-      console.log("Nomor sertifikat from intern data:", internData.nomorSertifikat); // Debug log
       
       const res = await fetch("/api/template");
       const templates = await res.json();
@@ -200,9 +149,6 @@ export default function SertifikatSaya() {
       if (Array.isArray(templates) && templates.length > 0) {
         // Ambil template DEFAULT
         const defaultTemplate = templates.find(t => t.status === "DEFAULT") || templates[0];
-        
-        console.log("Using template:", defaultTemplate); // Debug log
-        console.log("All template elements:", defaultTemplate.elements.map(el => ({ id: el.id, label: el.label }))); // Debug log
         
         // Format tanggal untuk tampilan sertifikat (contoh: 01 Januari 2025)
         const formatTanggalIndonesia = (dateStr) => {
@@ -233,7 +179,6 @@ export default function SertifikatSaya() {
         const customizedTemplate = {
           ...defaultTemplate,
           elements: defaultTemplate.elements.map((el) => {
-            console.log("Processing template element:", `ID: ${el.id}, Label: "${el.label}"`); // Debug log
             
             // Customize fields based on the element ID and label
             if (el.label === "Nama Peserta") {
@@ -253,8 +198,6 @@ export default function SertifikatSaya() {
               el.label.toLowerCase().includes("certificate")
             ) {
               const nomorValue = internData.nomorSertifikat || "No. [BELUM DIISI]";
-              console.log(`🎯 FOUND NOMOR FIELD! ID: ${el.id}, Label: "${el.label}" -> Setting value to:`, nomorValue); // Debug log
-              console.log(`📋 internData.nomorSertifikat:`, internData.nomorSertifikat); // Debug log
               return { ...el, value: nomorValue };
             } else if (el.id === 5 && el.label === "Deskripsi") {
               return {
@@ -291,11 +234,9 @@ export default function SertifikatSaya() {
           }),
         };
 
-        console.log("Generated customized template:", customizedTemplate); // Debug log
         setSertifikat(customizedTemplate);
       }
     } catch (error) {
-      console.error("Error generating certificate:", error);
     }
   };
 
@@ -322,6 +263,28 @@ export default function SertifikatSaya() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Early return for mobile devices
+  if (isMobile) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Desktop Only
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Fitur ini hanya tersedia di desktop. Silakan akses melalui komputer atau laptop.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+          >
+            Kembali
+          </button>
+        </div>
       </div>
     );
   }

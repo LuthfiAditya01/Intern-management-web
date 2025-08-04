@@ -116,7 +116,6 @@ export default function Dashboard() {
         setUser(user);
         const token = await user.getIdTokenResult();
         // Matikan saat Production
-        console.log(token);
         // Sampai Sini
         const admin = token.claims.role === "admin";
         const pembimbing = token.claims.role === "pembimbing";
@@ -131,7 +130,6 @@ export default function Dashboard() {
           console.log("👑 Ini admin");
         } else {
           console.log("🙅‍♂️ Bukan admin");
-          console.log(token);
         }
 
         const today = new Date();
@@ -243,7 +241,6 @@ export default function Dashboard() {
       const me = interns.find((i) => i.userId === user.uid);
       if (me) {
         setUserInternData(me);
-        console.log("Isi dari userInternData adalah : ", userInternData);
         setUserStatus(me.status ?? "pending");
         setUserDivision(me.divisi ?? "-");
         setUserMentor(me.pembimbing?.nama ?? "-");
@@ -315,7 +312,6 @@ export default function Dashboard() {
       try {
         // Cek langsung flag isSertifikatVerified dari userInternData
         setHasCertificate(userInternData.isSertifikatVerified === true);
-        console.log("Certificate status:", userInternData.isSertifikatVerified);
       } catch (error) {
         console.error("Error checking certificate status:", error);
         setHasCertificate(false);

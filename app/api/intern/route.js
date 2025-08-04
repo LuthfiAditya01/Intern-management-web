@@ -15,7 +15,6 @@ export async function GET(request) {
         // Jika ada userId, cari berdasarkan userId
         if (userId) {
             const intern = await Intern.findOne({ userId }).populate('pembimbing', 'nama');
-            console.log('Found intern for userId:', userId, 'Data:', intern);
             return NextResponse.json({ interns: intern ? [intern] : [] });
         }
 
@@ -57,7 +56,6 @@ export async function POST(request) {
     try {
         const body = await request.json();
 
-        console.log("Received data:", body);
 
         const {
             nama, nim, nik, prodi, kampus,
@@ -124,11 +122,9 @@ export async function POST(request) {
             createdAt: createdAt ? new Date(createdAt) : new Date()
         };
 
-        console.log("Creating intern with data:", internData);
 
         const newIntern = await Intern.create(internData);
 
-        console.log("Intern created successfully:", newIntern);
 
         return NextResponse.json(
             {

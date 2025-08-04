@@ -15,7 +15,6 @@ export default function FormIzin({ userId, nama }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`); // Debug log
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -33,11 +32,6 @@ export default function FormIzin({ userId, nama }) {
         messageIzin: formData.penjelasanIzin,
         linkBukti: formData.linkBukti
       };
-
-      console.log("Data yang akan dikirim:", dataToSubmit);
-      console.log("userId:", userId);
-      console.log("izinType:", formData.izinType);
-      console.log("penjelasanIzin:", formData.penjelasanIzin);
 
       const response = await axios.post("/api/izin", dataToSubmit);
 

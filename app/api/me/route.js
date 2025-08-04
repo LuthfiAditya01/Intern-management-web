@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/app/firebase/config";
 import connectMongoDB from "@/lib/mongodb";
 import { Intern } from "@/models/internInfo";
-import { getToken } from "next-auth/jwt";
 
 export async function GET(request) {
   try {

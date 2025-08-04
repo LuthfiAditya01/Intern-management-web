@@ -14,14 +14,10 @@ export async function POST(request) {
 
     try {
       const waktuResponse = await fetch("http://worldtimeapi.org/api/timezone/Asia/Jakarta");
-      console.log("Fetch waktu dari API WorldTimeAPI berhasil");
       const waktuData = await waktuResponse.json();
       waktuIzin = new Date(waktuData.datetime);
-      console.log("Waktu berdasarkan WorldTime API Zona Jakarta adalah : ", waktuIzin);
     } catch (error) {
-      console.log("Gagal mengambil waktu dari API, menggunakan waktu server lokal");
       // waktuIzin is already initialized with new Date() above
-      console.log(`Menggunakan waktu lokal: ${waktuIzin}`);
     }
     // Validate data
     if (!idUser || !keteranganIzin || !messageIzin) {

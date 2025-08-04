@@ -1,6 +1,6 @@
 import connectMongoDB from "@/lib/mongodb";
 import User from "@/models/User";
-import { auth } from "@/lib/firebaseAdmin"; // jika pakai Firebase
+import { auth } from "@/lib/firebase-admin"; // jika pakai Firebase
 import { NextResponse } from "next/server";
 
 export async function GET(req) {

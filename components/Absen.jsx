@@ -104,7 +104,6 @@ export default function Absen() {
 
   // Fungsi untuk update lokasi (dipanggil dari komponen anak)
   const handleLocationUpdate = (coords) => {
-    console.log("Koordinat diterima di page.js:", coords);
     setCoordinates(coords);
     setFormData((prev) => ({
       ...prev,
@@ -135,9 +134,7 @@ export default function Absen() {
 
         try {
           const res = await axios.get("/api/intern");
-          console.log(res);
           const myData = res.data.interns.find((i) => i.userId === currentUser.uid);
-          console.log(myData);
 
           if (myData) {
             setFormData((prev) => ({
@@ -191,7 +188,6 @@ export default function Absen() {
         dailyNote: formData.dailyNote,
       };
 
-      console.log("Data yang akan dikirim:", dataToSubmit);
 
       const response = await fetch("/api/absen", {
         method: "POST",
