@@ -20,7 +20,9 @@ export default function IzinTable() {
 
   const fetchUserInternData = async (queryParam) => {
     try {
-      const response = await axios.get(`/api/intern?${queryParam}`);
+      const url = "/api/izin";
+      const config = { params: { userId: userId } };
+      const response = await axios.get(url, config);
       if (response.data?.interns?.length > 0) {
         console.log("✅ Intern ditemukan:", response.data.interns[0].nama);
         setUserInternData(response.data.interns[0]);
@@ -145,7 +147,7 @@ export default function IzinTable() {
       try {
         // const url = "/api/izin";
         // const config = { params: { email : user.email } };
-        const response = await axios.get(`/api/intern?userId=${userId}`);
+        const response = await axios.get(`/api/izin?userId=${userId}`);
 
         console.log(`Fetching izin data untuk user ${userId}…`);
 

@@ -63,15 +63,19 @@ export async function GET(request) {
     const date = searchParams.get("date");
 
     let query = {};
-    if (userId && date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
-      
+    if (userId) {
       query.idUser = userId;
-      query.izinDate = {
-        $gte: startDate,
-        $lt: endDate
+
+      if(date){
+        
+        const startDate = new Date(date);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 1);
+        
+        query.izinDate = {
+          $gte: startDate,
+          $lt: endDate
+        };
       };
     };
 
