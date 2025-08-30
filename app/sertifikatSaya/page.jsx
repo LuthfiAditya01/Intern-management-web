@@ -414,9 +414,9 @@ export default function SertifikatSaya() {
                   Belum diisi oleh admin
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
+              {/* <p className="text-xs text-gray-500 mt-2">
                 Debug info - User ID: {userInternData.userId} | Nama: {userInternData.nama}
-              </p>
+              </p> */}
             </div>
           )}
         </div>
