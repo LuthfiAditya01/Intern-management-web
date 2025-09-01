@@ -699,16 +699,6 @@ const SertifikatPage = () => {
               <div className="flex justify-between items-center w-full mb-4">
                 <h1 className="text-2xl font-bold">Cetak Sertifikat</h1>
                 <div className="space-x-2">
-                  <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded shadow cursor-pointer"
-                    onClick={() => setShowAddForm(true)}>
-                    Add Data
-                  </button>
-                  <button
-                    onClick={() => setShowImportModal(true)}
-                    className="bg-gray-400 text-white px-4 py-2 rounded shadow cursor-pointer">
-                    Import Data
-                  </button>
                 </div>
               </div>
             </div>
